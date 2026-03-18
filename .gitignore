@@ -39,7 +39,7 @@ env/
 .env.*.local
 
 # Data and user files
-data/
+/data/
 skills/
 ckpt/
 *.jsonl
