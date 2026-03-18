@@ -136,6 +136,8 @@ python example_fully_automatic.py
 
 ### 示例 5: 树感知优化（自动拆分 & 剪枝）
 
+**完整验证报告**: 请查看 [`demo/TREE_OPTIMIZATION_DEMO.md`](./demo/TREE_OPTIMIZATION_DEMO.md) 查看渐进式剪枝的完整验证结果和使用指南。
+
 ```bash
 python example_tree_optimization.py
 ```

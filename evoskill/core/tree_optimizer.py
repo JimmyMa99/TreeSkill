@@ -38,6 +38,21 @@ class TreeOptimizerConfig:
         Automatically prune low-performing child skills.
     prune_threshold : float
         Performance threshold for pruning (0.0-1.0).
+    prune_protection_rounds : int
+        Number of rounds to protect newly created nodes from pruning.
+        This implements "progressive disclosure" - nodes need time to accumulate experience.
+    prune_usage_threshold : int
+        Minimum usage count before considering prune. New nodes start at 0.
+    prune_strategy : str
+        Pruning strategy: 'aggressive', 'moderate', 'conservative', 'disabled'.
+        - aggressive: prune quickly (default behavior)
+        - moderate: wait for more data
+        - conservative: only prune clearly failing nodes
+        - disabled: never auto-prune
+    collapse_instead_of_prune : bool
+        If True, collapse underused nodes (hide from routing) instead of deleting.
+        This preserves learned knowledge for potential future use.
+        Implements "progressive disclosure" of context.
     min_samples_for_split : int
         Minimum number of samples required before considering a split.
     max_tree_depth : int
@@ -51,6 +66,10 @@ class TreeOptimizerConfig:
     auto_split: bool = True
     auto_prune: bool = True
     prune_threshold: float = 0.3
+    prune_protection_rounds: int = 2  # Protect new nodes for 2 rounds
+    prune_usage_threshold: int = 2  # Minimum usage before considering prune
+    prune_strategy: str = "moderate"  # aggressive/moderate/conservative/disabled
+    collapse_instead_of_prune: bool = True  # Progressive disclosure
     min_samples_for_split: int = 5
     max_tree_depth: int = 3
     optimization_order: str = "bottom_up"  # bottom_up / top_down
@@ -165,6 +184,15 @@ class TreeAwareOptimizer:
         """
         logger.info(f"Starting tree optimization with {len(experiences)} experiences")
 
+        # Increment age for all nodes (progressive disclosure)
+        def _increment_age(node):
+            node.age += 1
+            for child in node.children.values():
+                _increment_age(child)
+
+        _increment_age(tree.root)
+        logger.info("Incremented age for all nodes")
+
         result = TreeOptimizationResult(tree=tree)
 
         # Traverse tree in specified order
@@ -184,10 +212,32 @@ class TreeAwareOptimizer:
             )
 
             if optimized_prompt:
-                # Update node's prompt
-                if hasattr(node.skill, 'system_prompt'):
-                    node.skill.system_prompt = self._extract_prompt_text(optimized_prompt)
-                node.skill.version = optimized_prompt.version
+                # Update node's prompt - Create new Skill object with updated prompt
+                # ⭐ Pydantic models are immutable, so we need to create a new object
+                new_prompt_text = self._extract_prompt_text(optimized_prompt)
+
+                # DEBUG: Log the update
+                logger.info(f"🔧 Updating node '{node.name}':")
+                logger.info(f"   Old prompt (v{node.skill.version}): {node.skill.system_prompt[:100]}...")
+                logger.info(f"   New prompt (v{optimized_prompt.version}): {new_prompt_text[:100]}...")
+
+                # Use model_copy to create updated skill
+                updated_skill = node.skill.model_copy(update={
+                    'system_prompt': new_prompt_text,
+                    'version': optimized_prompt.version,
+                })
+
+                # Verify updated_skill has new values
+                logger.info(f"   ✅ Created updated_skill with prompt: {updated_skill.system_prompt[:100]}...")
+                logger.info(f"   ✅ Created updated_skill with version: {updated_skill.version}")
+
+                # Replace the node's skill with the updated one
+                node.skill = updated_skill
+
+                # Verify assignment worked
+                logger.info(f"   ✅ After assignment, node.skill.prompt: {node.skill.system_prompt[:100]}...")
+                logger.info(f"   ✅ After assignment, node.skill.version: {node.skill.version}")
+
                 result.nodes_optimized += 1
 
             # Step 2: Auto-split analysis
@@ -499,10 +549,15 @@ class TreeAwareOptimizer:
     def analyze_prune_need(self, node: Any, metrics: Dict) -> bool:
         """Analyze whether a node should be pruned.
 
-        Pruning conditions:
+        Pruning conditions (strategy-dependent):
         1. Node performance < prune_threshold
-        2. Usage frequency is extremely low
+        2. Usage frequency is extremely low (after protection period)
         3. Parent already covers its responsibilities
+
+        Progressive Disclosure:
+        - New nodes are protected for `prune_protection_rounds` rounds
+        - Strategy controls how aggressive pruning is
+        - Can collapse (hide) instead of delete if `collapse_instead_of_prune=True`
 
         Parameters
         ----------
@@ -516,27 +571,70 @@ class TreeAwareOptimizer:
         bool
             True if the node should be pruned.
         """
-        # Condition 1: Low performance score
-        performance_score = metrics.get("performance_score", 0.5)
-        if performance_score < self.config.prune_threshold:
+        # Get node age (rounds since creation)
+        node_age = getattr(node, 'age', 0)  # Default to 0 if not tracked
+
+        # Protection period for new nodes
+        if node_age < self.config.prune_protection_rounds:
             logger.info(
-                f"Pruning '{node.name}': performance {performance_score:.2f} < threshold {self.config.prune_threshold}"
+                f"🛡️ Protecting '{node.name}': age {node_age} < protection period {self.config.prune_protection_rounds}"
+            )
+            return False
+
+        # Get metrics
+        performance_score = metrics.get("performance_score", 0.5)
+        usage_count = metrics.get("usage_count", 0)
+        success_rate = metrics.get("success_rate", 0.5)
+
+        # Strategy-specific thresholds
+        if self.config.prune_strategy == "disabled":
+            return False
+
+        elif self.config.prune_strategy == "conservative":
+            # Only prune clearly failing nodes
+            usage_threshold = max(self.config.prune_usage_threshold, 5)
+            performance_threshold = 0.2
+            success_threshold = 0.2
+
+        elif self.config.prune_strategy == "moderate":
+            # Balanced approach
+            usage_threshold = self.config.prune_usage_threshold
+            performance_threshold = self.config.prune_threshold
+            success_threshold = 0.3
+
+        elif self.config.prune_strategy == "aggressive":
+            # Quick pruning
+            usage_threshold = max(1, self.config.prune_usage_threshold - 1)
+            performance_threshold = self.config.prune_threshold
+            success_threshold = 0.4
+
+        else:
+            # Default to moderate
+            usage_threshold = self.config.prune_usage_threshold
+            performance_threshold = self.config.prune_threshold
+            success_threshold = 0.3
+
+        # Condition 1: Low performance score
+        if performance_score < performance_threshold:
+            action = "collapse" if self.config.collapse_instead_of_prune else "prune"
+            logger.info(
+                f"✂️ {action.capitalize()} '{node.name}': performance {performance_score:.2f} < threshold {performance_threshold}"
             )
             return True
 
-        # Condition 2: Very low usage frequency
-        usage_count = metrics.get("usage_count", 0)
-        if usage_count < 2:
+        # Condition 2: Very low usage frequency (after protection period)
+        if usage_count < usage_threshold:
+            action = "collapse" if self.config.collapse_instead_of_prune else "prune"
             logger.info(
-                f"Pruning '{node.name}': very low usage count ({usage_count})"
+                f"✂️ {action.capitalize()} '{node.name}': low usage count ({usage_count} < {usage_threshold})"
             )
             return True
 
         # Condition 3: Low success rate
-        success_rate = metrics.get("success_rate", 0.5)
-        if success_rate < 0.3:
+        if success_rate < success_threshold:
+            action = "collapse" if self.config.collapse_instead_of_prune else "prune"
             logger.info(
-                f"Pruning '{node.name}': low success rate {success_rate:.2%}"
+                f"✂️ {action.capitalize()} '{node.name}': low success rate {success_rate:.2%} < {success_threshold:.2%}"
             )
             return True
 
@@ -742,24 +840,21 @@ class TreeAwareOptimizer:
             line_lower = line.lower()
 
             # Detect section headers
-            if line_lower.startswith("instruction:".strip():
-                if current_section == "instruction":
-                    current_section = "instruction"
-                    continue
+            if line_lower.startswith("instruction:"):
+                current_section = "instruction"
+                continue
 
-            if line_lower.startswith("Example:").strip():
-                if current_section == "example":
-                    current_section = "example"
-                    continue
+            if line_lower.startswith("example:"):
+                current_section = "example"
+                continue
 
-            if line_lower.startswith("constraint:").strip():
-                if current_section == "constraint":
-                    current_section = "constraint"
-                    continue
+            if line_lower.startswith("constraint:"):
+                current_section = "constraint"
+                continue
 
             # Accum content
             if current_section:
-                section_content.append(line)
+                section_content[current_section].append(line)
             elif current_section:
                 # Fuzzy match
                 if "instruction" in line or "constraint" in line:
@@ -1024,14 +1119,24 @@ class TreeAwareOptimizer:
 
     def _extract_prompt_text(self, prompt: OptimizablePrompt) -> str:
         """Extract text from an OptimizablePrompt."""
+        # 处理字符串情况
+        if isinstance(prompt, str):
+            return prompt
+
+        # 处理对象情况
         if hasattr(prompt, "content"):
             return prompt.content
         elif hasattr(prompt, "text"):
             return prompt.text
         elif hasattr(prompt, "instruction"):
             return prompt.instruction
-        else:
+        elif hasattr(prompt, "system_prompt"):
+            return prompt.system_prompt
+        elif hasattr(prompt, "to_model_input"):
             return str(prompt.to_model_input())
+        else:
+            # 最后fallback
+            return str(prompt)
 
     def _create_skill_from_prompt(self, prompt: OptimizablePrompt, template_skill: Any) -> Any:
         """Create a Skill from an OptimizablePrompt using a template."""
@@ -1073,5 +1178,3 @@ class TreeAwareOptimizer:
             "usage_count": 0,
             "success_rate": 0.5,
         }
-
-    def analyze_prune_need(self, node: Any, metrics: Dict) -> bool:

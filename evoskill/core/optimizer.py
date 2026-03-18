@@ -167,7 +167,9 @@ class TrainFreeOptimizer:
             current_prompt = new_prompt
 
         # Step 4: Return result
-        final_prompt = best_prompt
+        # If no validator was used, return the last updated prompt (current_prompt)
+        # Otherwise return the best prompt found during validation
+        final_prompt = best_prompt if validator else current_prompt
         final_score = best_score
         improvement = None
         if initial_score is not None and final_score is not None:

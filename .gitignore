@@ -44,6 +44,9 @@ skills/
 ckpt/
 *.jsonl
 
+# Demo output directories
+demo-*/
+
 # Claude Code
 .claude/
 

@@ -61,6 +61,13 @@ class SkillNode:
         Extra metadata loaded from ``_meta.yaml``.
     path : Path | None
         Disk path this node was loaded from (``None`` for in-memory nodes).
+    age : int
+        Number of optimization rounds this node has survived. Used for progressive disclosure.
+    usage_count : int
+        Number of times this node has been used/routed to.
+    collapsed : bool
+        If True, this node is "folded" (hidden from routing) but not deleted.
+        Implements progressive disclosure - preserve knowledge for future use.
     """
 
     name: str
@@ -68,6 +75,9 @@ class SkillNode:
     children: Dict[str, "SkillNode"] = field(default_factory=dict)
     meta: Optional[SkillMeta] = None
     path: Optional[Path] = None
+    age: int = 0  # For progressive disclosure - tracks node maturity
+    usage_count: int = 0  # Track how often this node is used
+    collapsed: bool = False  # Progressive disclosure - hide without deleting
 
     # -- convenience -------------------------------------------------------
 
@@ -351,6 +361,9 @@ def _save_node(node: SkillNode, directory: Path) -> None:
         )
 
     # Save root skill
+    logger.info(f"💾 Saving skill for node '{node.name}':")
+    logger.info(f"   Version: {node.skill.version}")
+    logger.info(f"   Prompt: {node.skill.system_prompt[:100]}...")
     skill_module.save(node.skill, directory / _ROOT_SKILL)
 
     # Save children (and clean up removed ones)

@@ -381,14 +381,23 @@ class BaseModelAdapter(ModelAdapter):
         # Create new prompt with updated content
         new_prompt = prompt.bump_version()
 
+        logger.info("After bump_version:")
+        logger.info(f"  new_prompt.version = {new_prompt.version}")
+        logger.info(f"  new_prompt.content (before update) = {new_prompt.content[:100]}...")
+
         # Update the content
         if hasattr(new_prompt, "content"):
             new_prompt.content = new_prompt_text
+            logger.info(f"  ✅ Updated new_prompt.content to: {new_prompt.content[:100]}...")
         elif hasattr(new_prompt, "text"):
             new_prompt.text = new_prompt_text
+            logger.info(f"  ✅ Updated new_prompt.text to: {new_prompt.text[:100]}...")
         elif hasattr(new_prompt, "instruction"):
             new_prompt.instruction = new_prompt_text
+            logger.info(f"  ✅ Updated new_prompt.instruction to: {new_prompt.instruction[:100]}...")
 
+        logger.info(f"Final new_prompt.version = {new_prompt.version}")
+        logger.info(f"Final new_prompt.content = {new_prompt.content[:100]}...")
         logger.info("Applied gradient → new prompt version: %s", new_prompt.version)
 
         return new_prompt
