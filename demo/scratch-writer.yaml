@@ -1,6 +1,0 @@
-name: scratch-writer
-version: v1.0
-system_prompt: 你是一个写作助手。
-target: null
-few_shot_messages: []
-config: {}
