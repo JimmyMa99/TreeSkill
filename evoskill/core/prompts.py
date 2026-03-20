@@ -94,7 +94,7 @@ class TextPrompt:
 class MultimodalPrompt:
     """Prompt with text and optional images/audio.
 
-    For vision-language models (GPT-4o, Claude 3.5 Sonnet, Gemini).
+    For vision-language models (GPT-4o, Claude 4.5 Sonnet, Gemini).
 
     Example
     -------

@@ -283,10 +283,155 @@ class SkillTree:
             parent.name,
         )
 
+    # ------------------------------------------------------------------
+    # Graft: attach another skill / tree onto this tree
+    # ------------------------------------------------------------------
+
+    def graft(
+        self,
+        target_path: str,
+        source: Union["SkillTree", SkillNode, Skill],
+        *,
+        name: Optional[str] = None,
+    ) -> SkillNode:
+        """将另一个 Skill / SkillNode / SkillTree 嫁接到本树的指定位置。
+
+        Parameters
+        ----------
+        target_path : str
+            嫁接到哪个节点下面。空字符串表示根节点。
+        source : SkillTree | SkillNode | Skill
+            要嫁接的来源:
+            - ``SkillTree`` — 把整棵子树接过来（根节点变成子节点）
+            - ``SkillNode`` — 把节点（含子节点）接过来
+            - ``Skill``     — 创建一个叶节点
+        name : str | None
+            嫁接后的节点名。默认取 source 自身的 name。
+
+        Returns
+        -------
+        SkillNode
+            新嫁接的节点。
+
+        Raises
+        ------
+        ValueError
+            如果目标位置已存在同名子节点。
+
+        Examples
+        --------
+        嫁接一个独立的 skill::
+
+            external = load_skill("./another-skill")
+            tree.graft("social", external)
+            # → social 下面多了一个子节点
+
+        嫁接整棵子树::
+
+            other_tree = SkillTree.load("./other-skills")
+            tree.graft("business", other_tree)
+            # → business 下面多了 other_tree 的全部节点
+
+        跨树嫁接某个分支::
+
+            node = other_tree.get("email")
+            tree.graft("business", node, name="imported-email")
+        """
+        parent = self.get(target_path) if target_path else self.root
+
+        # Normalize source → SkillNode
+        if isinstance(source, SkillTree):
+            graft_node = source.root
+        elif isinstance(source, Skill):
+            graft_node = SkillNode(name=source.name, skill=source)
+        else:
+            graft_node = source
+
+        graft_name = name or graft_node.name
+
+        if graft_name in parent.children:
+            raise ValueError(
+                f"'{graft_name}' 已存在于 '{parent.name}' 下。"
+                f"请用 name= 参数指定不同名称，或先 prune 已有节点。"
+            )
+
+        # Deep copy: 重建节点避免共享引用
+        copied = _deep_copy_node(graft_node, new_name=graft_name)
+        parent.children[graft_name] = copied
+
+        child_count = copied.leaf_count()
+        logger.info(
+            "Grafted '%s' under '%s' (%d leaf skills)",
+            graft_name,
+            parent.name,
+            child_count,
+        )
+        return copied
+
+    # ------------------------------------------------------------------
+    # Collect tools: resolve all tools for a given skill node
+    # ------------------------------------------------------------------
+
+    def collect_tools(self, dotpath: str = "") -> List:
+        """收集指定节点的完整工具列表（含祖先继承）。
+
+        工具继承规则:
+        - 子节点继承父节点的所有工具声明
+        - 子节点自己的工具声明优先（同名覆盖）
+        - script.py 中的函数也作为工具来源
+
+        Parameters
+        ----------
+        dotpath : str
+            节点路径。空字符串表示根节点。
+
+        Returns
+        -------
+        List[ToolRef]
+            合并后的工具声明列表（去重，子覆盖父）。
+        """
+        from evoskill.schema import ToolRef
+
+        # 收集从根到目标节点的路径
+        parts = [p for p in dotpath.split(".") if p]
+        chain: List[SkillNode] = [self.root]
+        node = self.root
+        for p in parts:
+            node = node.children[p]
+            chain.append(node)
+
+        # 从根到叶合并工具，后面的覆盖前面的
+        merged: Dict[str, "ToolRef"] = {}
+        for n in chain:
+            for tool_ref in n.skill.tools:
+                merged[tool_ref.name] = tool_ref
+
+        return list(merged.values())
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers — disk I/O
 # ---------------------------------------------------------------------------
+
+def _deep_copy_node(
+    node: SkillNode,
+    new_name: Optional[str] = None,
+) -> SkillNode:
+    """深拷贝一个 SkillNode（含所有子节点），避免树间共享引用。"""
+    copied = SkillNode(
+        name=new_name or node.name,
+        skill=node.skill.model_copy(
+            update={"name": new_name} if new_name else {},
+        ),
+        path=None,  # 嫁接后的节点需要重新保存，path 由 save 决定
+        age=node.age,
+        usage_count=0,  # 嫁接后重置使用计数
+        collapsed=node.collapsed,
+    )
+    for child_name, child_node in node.children.items():
+        copied.children[child_name] = _deep_copy_node(child_node)
+    return copied
+
 
 def _load_node(directory: Path) -> SkillNode:
     """Recursively load a single tree node from *directory*."""
@@ -335,6 +480,65 @@ def _save_node(node: SkillNode, directory: Path) -> None:
 # ---------------------------------------------------------------------------
 # Pretty-print helper
 # ---------------------------------------------------------------------------
+
+def resolve_skill_tools(
+    skill: Skill,
+    skill_dir: Optional[Path] = None,
+) -> Dict[str, "BaseTool"]:
+    """将 Skill 的工具声明 + script.py 解析为可执行的 BaseTool 字典。
+
+    工具来源（按优先级从低到高）:
+    1. ``skill.tools`` 中的 ToolRef 声明（http / mcp）
+    2. ``script.py`` 中的公开函数（如果 skill_dir 指定）
+
+    script.py 中的同名函数会覆盖 ToolRef 声明。
+
+    Parameters
+    ----------
+    skill : Skill
+        技能对象。
+    skill_dir : Path | None
+        技能目录路径（用于加载 script.py）。
+
+    Returns
+    -------
+    Dict[str, BaseTool]
+        工具名 → 可执行工具。
+    """
+    from evoskill.tools import BaseTool, HTTPTool, MCPTool
+
+    tools: Dict[str, BaseTool] = {}
+
+    # 1. 从 ToolRef 声明创建工具
+    for ref in skill.tools:
+        if ref.type == "http" and ref.endpoint:
+            tools[ref.name] = HTTPTool(
+                _name=ref.name,
+                _description=ref.description,
+                endpoint=ref.endpoint,
+                method=ref.method,
+                headers=ref.headers,
+            )
+        elif ref.type == "mcp" and ref.mcp_server:
+            tools[ref.name] = MCPTool(
+                _name=ref.name,
+                _description=ref.description,
+                mcp_server=ref.mcp_server,
+                tool_name=ref.tool_name or ref.name,
+                auth_token=ref.auth_token,
+            )
+
+    # 2. 从 script.py 加载（覆盖同名）
+    if skill_dir:
+        try:
+            from evoskill.script import load_script_as_tools
+            script_tools = load_script_as_tools(skill_dir)
+            tools.update(script_tools)
+        except (ValueError, Exception) as exc:
+            logger.warning("加载 script.py 工具失败: %s", exc)
+
+    return tools
+
 
 def _format_tree(
     node: SkillNode,

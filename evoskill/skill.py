@@ -37,6 +37,7 @@ from evoskill.schema import Message, Skill
 
 SKILL_FILE = "SKILL.md"
 CONFIG_FILE = "config.yaml"
+SCRIPT_FILE = "script.py"
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?(.*)", re.DOTALL)
 
@@ -148,8 +149,18 @@ def load(path: Union[str, Path]) -> Skill:
         ) or {}
         if "few_shot_messages" in config_raw:
             fields["few_shot_messages"] = config_raw.pop("few_shot_messages")
+        if "agenda" in config_raw:
+            fields["agenda"] = config_raw.pop("agenda")
+        if "tools" in config_raw:
+            fields["tools"] = config_raw.pop("tools")
         if config_raw:
             fields["config"] = config_raw
+
+    # Load optional script.py
+    skill_dir = skill_md_path.parent
+    script_path = skill_dir / SCRIPT_FILE
+    if script_path.is_file():
+        fields["script"] = script_path.read_text(encoding="utf-8")
 
     return Skill.model_validate(fields)
 
@@ -185,6 +196,15 @@ def save(skill: Skill, path: Union[str, Path]) -> None:
         config_data["few_shot_messages"] = [
             msg.model_dump(mode="json") for msg in skill.few_shot_messages
         ]
+    if skill.agenda:
+        config_data["agenda"] = [
+            entry.model_dump(mode="json") for entry in skill.agenda
+        ]
+    if skill.tools:
+        config_data["tools"] = [
+            ref.model_dump(mode="json", exclude_none=True)
+            for ref in skill.tools
+        ]
     if skill.config:
         config_data.update(skill.config)
 
@@ -202,19 +222,41 @@ def save(skill: Skill, path: Union[str, Path]) -> None:
         # Remove stale config.yaml if no config data
         config_path.unlink()
 
+    # Write script.py (only if skill contains a script)
+    script_path = skill_md_path.parent / SCRIPT_FILE
+    if skill.script:
+        script_path.write_text(skill.script, encoding="utf-8")
+    elif script_path.is_file():
+        # Remove stale script.py if no script content
+        script_path.unlink()
+
 
 # ---------------------------------------------------------------------------
 # Message Compilation
 # ---------------------------------------------------------------------------
 
-def compile_messages(skill: Skill, user_input: List[Message]) -> List[Message]:
+def compile_messages(
+    skill: Skill,
+    user_input: List[Message],
+    *,
+    agenda_context: Optional[str] = None,
+) -> List[Message]:
     """Build the full message list sent to the LLM.
 
     Order::
 
-        [SystemMessage(skill.system_prompt)]
+        [SystemMessage(skill.system_prompt + agenda_context)]
         + skill.few_shot_messages
         + user_input
+
+    Parameters
+    ----------
+    agenda_context : str | None
+        由 ``AgendaStore.compile_context()`` 生成的日程上下文。
+        非空时追加到 system prompt 末尾。
     """
-    system_msg = Message(role="system", content=skill.system_prompt)
+    prompt = skill.system_prompt
+    if agenda_context:
+        prompt = f"{prompt}\n\n{agenda_context}"
+    system_msg = Message(role="system", content=prompt)
     return [system_msg] + list(skill.few_shot_messages) + list(user_input)

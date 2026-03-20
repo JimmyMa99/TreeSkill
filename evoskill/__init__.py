@@ -156,7 +156,7 @@ from evoskill.schema import (
     Trace,
 )
 from evoskill.config import GlobalConfig
-from evoskill.skill_tree import SkillTree, SkillNode
+from evoskill.skill_tree import SkillTree, SkillNode, resolve_skill_tools
 from evoskill.checkpoint import CheckpointManager
 from evoskill.resume import ResumeState
 
@@ -180,6 +180,23 @@ from evoskill.script import (
     load_script,
     save_script,
     load_script_as_tools,
+)
+
+# Memory module
+from evoskill.memory import (
+    MEMORY_FILE,
+    MemoryType,
+    MemoryEntry,
+    MemoryStore,
+    MemoryCompiler,
+)
+
+# Schema: Agenda & ToolRef
+from evoskill.schema import AgendaEntry, AgendaType, Recurrence, ToolRef
+from evoskill.agenda import (
+    AgendaManager,
+    compile_agenda_context,
+    parse_due,
 )
 
 __version__ = "0.2.0"
@@ -265,6 +282,8 @@ __all__ = [
     "SkillMeta",
     "SkillNode",
     "SkillTree",
+    "resolve_skill_tools",
+    "ToolRef",
     "TextContent",
     "Trace",
 
@@ -285,6 +304,21 @@ __all__ = [
     "load_script",
     "save_script",
     "load_script_as_tools",
+
+    # Memory module
+    "MEMORY_FILE",
+    "MemoryType",
+    "MemoryEntry",
+    "MemoryStore",
+    "MemoryCompiler",
+
+    # Agenda module
+    "AgendaEntry",
+    "AgendaType",
+    "Recurrence",
+    "AgendaManager",
+    "compile_agenda_context",
+    "parse_due",
 
     # Version
     "__version__",

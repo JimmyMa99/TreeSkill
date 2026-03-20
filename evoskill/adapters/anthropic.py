@@ -1,11 +1,9 @@
 """Anthropic Claude API Adapter.
 
-Supports all Claude 3.5 and Claude 3 models including:
-- Claude 3.5 Sonnet (latest)
-- Claude 3.5 Haiku
-- Claude 3 Opus
-- Claude 3 Sonnet
-- Claude 3 Haiku
+Supports Claude model families:
+- Claude 4.5 series (Opus, Sonnet, Haiku) — latest
+- Claude 3.5 series (Sonnet, Haiku)
+- Claude 3 series (Opus, Sonnet, Haiku)
 
 Features:
 - Vision support for all Claude 3+ models
@@ -39,6 +37,11 @@ logger = logging.getLogger(__name__)
 
 # Model configurations
 CLAUDE_MODELS = {
+    # Claude 4.5 series
+    "claude-opus-4-5-20250918": {"context": 1_000_000, "vision": True, "cost_tier": "high"},
+    "claude-sonnet-4-5-20250514": {"context": 200_000, "vision": True, "cost_tier": "mid"},
+    "claude-haiku-4-5-20251001": {"context": 200_000, "vision": True, "cost_tier": "low"},
+
     # Claude 3.5 series
     "claude-3-5-sonnet-20241022": {"context": 200_000, "vision": True, "cost_tier": "mid"},
     "claude-3-5-sonnet-20240620": {"context": 200_000, "vision": True, "cost_tier": "mid"},
@@ -51,7 +54,7 @@ CLAUDE_MODELS = {
 }
 
 # Default model
-DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
+DEFAULT_MODEL = "claude-sonnet-4-5-20250514"
 
 
 class AnthropicAdapter(BaseModelAdapter):

@@ -3,10 +3,10 @@
 ## 概述
 
 `AnthropicAdapter` 是用于Anthropic Claude API的适配器实现，支持：
-- ✅ 所有Claude 3.5系列模型（Sonnet、Haiku）
-- ✅ 所有Claude 3系列模型（Opus、Sonnet、Haiku）
-- ✅ Vision支持（所有Claude 3+模型）
-- ✅ 200K超长上下文
+- ✅ Claude 4.5 系列模型（Opus、Sonnet、Haiku）
+- ✅ Claude 3.5 / 3 系列模型（向下兼容）
+- ✅ Vision 支持（所有 Claude 3+ 模型）
+- ✅ 最大 1M 上下文（Claude 4.5 Opus）
 - ✅ 独特的system prompt处理
 - ✅ TGD梯度计算和应用
 

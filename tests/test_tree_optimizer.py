@@ -90,7 +90,7 @@ class MockAdapter(ModelAdapter):
                 {"name": "formal_style", "description": "Formal writing tasks", "focus": "Professional tone"},
                 {"name": "casual_style", "description": "Casual writing tasks", "focus": "Friendly tone"},
             ])
-        elif "Generate specialized prompts" in content or "specialised child prompts" in system:
+        elif "Generate specialized prompts" in content or (system and "specialised child prompts" in system):
             # Child prompt generation response
             return json.dumps([
                 {
@@ -104,7 +104,7 @@ class MockAdapter(ModelAdapter):
                     "system_prompt": "You are a friendly assistant. Use casual language.",
                 },
             ])
-        elif "Rewrite ONLY the instruction" in system:
+        elif system and "Rewrite ONLY the instruction" in system:
             # Section rewrite response
             return "This is the rewritten instruction section."
         else:
@@ -114,6 +114,23 @@ class MockAdapter(ModelAdapter):
     def _count_tokens_impl(self, text: str) -> int:
         """Mock token counting."""
         return len(text.split())
+
+    def count_tokens(self, prompt) -> int:
+        """Mock token counting."""
+        return len(str(prompt).split())
+
+    def compute_gradient(self, prompt=None, experiences=None, failures=None, target=None, **kwargs):
+        """Mock gradient computation."""
+        from evoskill.core.gradient import SimpleGradient
+        return SimpleGradient(text="Mock gradient: improve clarity")
+
+    def apply_gradient(self, prompt=None, gradient=None, **kwargs):
+        """Mock gradient application."""
+        return prompt
+
+    def validate_prompt(self, prompt):
+        """Mock validation — always passes."""
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -158,36 +175,36 @@ def sample_experiences():
     for i in range(7):
         # Create conversation
         exp = ConversationExperience(
-            conversation=[
+            messages=[
                 {"role": "user", "content": f"Write a {['formal', 'casual'][i % 2]} email"},
-                {"role": "assistant", "content": f"Here's your email draft {i}..."},
-            ]
+            ],
+            response=f"Here's your email draft {i}...",
         )
 
         # Add feedback
         if i % 3 == 0:
             # Negative feedback
             feedback = CompositeFeedback(
-                feedback_type=FeedbackType.NEGATIVE,
+                feedback_type=FeedbackType.CRITIQUE,
                 critique=f"Wrong tone for task {i}",
                 score=0.3,
             )
         elif i % 3 == 1:
             # Positive feedback
             feedback = CompositeFeedback(
-                feedback_type=FeedbackType.POSITIVE,
+                feedback_type=FeedbackType.SCORE,
                 critique="Good response",
                 score=0.8,
             )
         else:
             # Neutral feedback
             feedback = CompositeFeedback(
-                feedback_type=FeedbackType.NEUTRAL,
+                feedback_type=FeedbackType.SCORE,
                 critique="Okay response",
                 score=0.5,
             )
 
-        exp.feedback = feedback
+        exp = exp.attach_feedback(feedback)
         experiences.append(exp)
 
     return experiences
@@ -257,7 +274,7 @@ def test_generate_child_prompts(tree_optimizer, sample_prompt):
     assert len(children) == 2, "Should generate 2 child prompts"
 
     for child in children:
-        assert isinstance(child, OptimizablePrompt), "Should return OptimizablePrompt"
+        assert isinstance(child, TextPrompt), "Should return TextPrompt"
         assert hasattr(child, "content"), "Should have content"
 
 
@@ -266,6 +283,7 @@ def test_analyze_prune_need_low_performance(tree_optimizer, tree_config):
     # Create mock node
     node = Mock()
     node.name = "test_node"
+    node.age = 10  # past protection period
 
     # Low performance metrics
     metrics = {
@@ -285,6 +303,7 @@ def test_analyze_prune_need_low_usage(tree_optimizer):
     # Create mock node
     node = Mock()
     node.name = "unused_node"
+    node.age = 10
 
     # Low usage metrics
     metrics = {
@@ -304,6 +323,7 @@ def test_analyze_prune_need_low_success_rate(tree_optimizer):
     # Create mock node
     node = Mock()
     node.name = "failing_node"
+    node.age = 10
 
     # Low success rate
     metrics = {
@@ -323,6 +343,7 @@ def test_analyze_prune_need_keeps_good_nodes(tree_optimizer):
     # Create mock node
     node = Mock()
     node.name = "good_node"
+    node.age = 10
 
     # Good metrics
     metrics = {
@@ -346,7 +367,7 @@ def test_optimize_prompt_section_instruction_only(tree_optimizer, sample_prompt,
     )
 
     # Check result
-    assert isinstance(optimized, OptimizablePrompt), "Should return OptimizablePrompt"
+    assert isinstance(optimized, TextPrompt), "Should return TextPrompt"
     assert hasattr(optimized, "content"), "Should have content"
     # The instruction section should be different
     # (In real implementation, we'd verify only instruction changed)
@@ -361,7 +382,7 @@ def test_optimize_prompt_section_all(tree_optimizer, sample_prompt, sample_exper
     )
 
     # Check result
-    assert isinstance(optimized, OptimizablePrompt), "Should return OptimizablePrompt"
+    assert isinstance(optimized, TextPrompt), "Should return TextPrompt"
     assert hasattr(optimized, "content"), "Should have content"
 
 
@@ -371,10 +392,16 @@ def test_optimize_tree_integration(tree_optimizer, sample_experiences):
     tree = Mock()
     root = Mock()
     root.name = "root"
-    root.skill = Mock()
-    root.skill.system_prompt = "You are a helpful assistant."
-    root.skill.version = "v1.0"
+    root.age = 0
     root.children = {}
+
+    # Use a real Skill-like object to avoid Mock subscript issues
+    from evoskill.schema import Skill
+    root.skill = Skill(
+        name="root",
+        system_prompt="You are a helpful assistant.",
+        version="v1.0",
+    )
     tree.root = root
     tree.add_child = Mock()
     tree.prune = Mock()
