@@ -157,7 +157,7 @@ exp = MultimodalExperience(
 ### Phase 1: 实现具体适配器
 - [ ] `adapters/openai.py` - OpenAI API适配器
 - [ ] `adapters/anthropic.py` - Claude API适配器
-- [ ] `adapters/local.py` - 本地模型适配器（llama.cpp/vLLM）
+
 
 ### Phase 2: 优化引擎
 - [ ] `optimizer/engine.py` - TGD优化引擎

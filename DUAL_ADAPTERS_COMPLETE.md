@@ -44,7 +44,7 @@
 - **成本敏感**：价格更透明，有mini选项
 - **推理任务**：o1系列适合复杂推理
 - **自定义部署**：支持OpenAI兼容API
-- **本地模型**：llama.cpp, vLLM等
+
 
 ### AnthropicAdapter ✅
 - **长文档处理**：200K上下文，可处理整本书
@@ -168,14 +168,7 @@ optimized_prompt = optimizer.optimize(
 
 **价值**：完成TGD优化循环，框架核心功能
 
-### 选项2: 实现LocalAdapter 🔌
-支持本地模型（llama.cpp, vLLM, Ollama）
-
-**预估时间**：1-2天
-
-**价值**：成本更低，隐私保护
-
-### 选项3: 集成到CLI 🔧
+### 选项 2: 集成到 CLI 🔧
 更新现有CLI使用新抽象层
 
 **预估时间**：2-3天
@@ -301,9 +294,8 @@ class AutoValidator:         # 自动验证
 
 **你想先做什么？**
 1. ✅ 优化引擎（推荐）
-2. ⏳ LocalAdapter
-3. ⏳ CLI集成
-4. ⏳ 导出工具
+2. ⏳ CLI 集成
+3. ⏳ 导出工具
 
 ---
 

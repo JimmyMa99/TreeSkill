@@ -160,37 +160,7 @@ optimizer = app.get_optimizer()
 
 ### 2.3 用户客制化示例
 
-#### 示例1: 自定义本地模型适配器
-
-```python
-# my_adapters.py
-
-from evoskill import adapter, BaseModelAdapter
-
-@adapter("local-llama")
-class LocalLlamaAdapter(BaseModelAdapter):
-    def __init__(self, model_path: str, **kwargs):
-        super().__init__(model_name="llama-local")
-        # 加载本地模型
-        from llama_cpp import Llama
-        self.llm = Llama(model_path=model_path)
-
-    def generate(self, prompt, context=None, **kwargs):
-        text = prompt.to_model_input()
-        output = self.llm(text, max_tokens=100)
-        return output['choices'][0]['text']
-
-    def _count_tokens_impl(self, text: str) -> int:
-        return len(text.split())
-
-# 使用
-from evoskill import registry
-
-adapter = registry.get_adapter("local-llama", model_path="/models/llama-70b.q4_0.gguf")
-response = adapter.generate(prompt)
-```
-
-#### 示例2: 自定义优化策略
+#### 示例 1: 自定义优化策略
 
 ```python
 # my_optimizer.py
@@ -225,7 +195,7 @@ class ConservativeOptimizer(TrainFreeOptimizer):
 optimizer = registry.get_optimizer("aggressive")
 ```
 
-#### 示例3: 监控和日志钩子
+#### 示例 2: 监控和日志钩子
 
 ```python
 # hooks.py

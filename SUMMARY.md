@@ -90,7 +90,7 @@ Total API calls: 2
 # 统一的接口，不同的实现
 openai_adapter = OpenAIAdapter(model="gpt-4o")
 claude_adapter = AnthropicAdapter(model="claude-3-5-sonnet-20241022")
-local_adapter = LocalAdapter(model="llama-3.1-70b")
+
 
 # 都使用相同的API
 gradient = adapter.compute_gradient(prompt, failures)
@@ -254,10 +254,7 @@ prompt = TextPrompt(content="...", name="test")
 - [ ] `adapters/anthropic.py` - Claude API适配器
   - [ ] Claude 3.5 Sonnet
   - [ ] Claude 3.5 Haiku
-- [ ] `adapters/local.py` - 本地模型适配器
-  - [ ] llama.cpp
-  - [ ] vLLM
-  - [ ] Ollama
+
 
 ### Phase 2: 优化引擎
 - [ ] `optimizer/engine.py` - TGD优化引擎
