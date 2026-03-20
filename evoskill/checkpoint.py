@@ -5,10 +5,10 @@ a training session::
 
     ckpt/
     └── writing-assistant_v1.2_20260306_140000/
-        ├── skill/          # complete skill tree (or single skill YAML)
-        │   ├── root.yaml
+        ├── skill/          # complete skill tree (Agent Skills format)
+        │   ├── SKILL.md
         │   └── social/
-        │       └── root.yaml
+        │       └── SKILL.md
         └── mem/
             ├── traces.jsonl
             └── meta.json   # optimization round, config, etc.
@@ -100,9 +100,8 @@ class CheckpointManager:
             skill_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(skill_source, skill_dir / skill_source.name)
         else:
-            # Skill object → save as YAML
-            skill_dir.mkdir(parents=True, exist_ok=True)
-            skill_module.save(skill_source, skill_dir / "root.yaml")
+            # Skill object → save as SKILL.md
+            skill_module.save(skill_source, skill_dir)
 
         # -- mem/ ----------------------------------------------------------
         mem_dir = ckpt_path / _MEM_DIR
@@ -151,13 +150,13 @@ class CheckpointManager:
         skill_dir = ckpt_path / _SKILL_DIR
         mem_dir = ckpt_path / _MEM_DIR
 
-        # Determine if it's a tree or single file
-        root_yaml = skill_dir / "root.yaml"
-        if root_yaml.is_file():
+        # Determine if it's a tree or single skill
+        skill_md = skill_dir / "SKILL.md"
+        if skill_md.is_file():
             skill_path = skill_dir
         else:
-            yamls = list(skill_dir.glob("*.yaml"))
-            skill_path = yamls[0] if yamls else skill_dir
+            # Fallback: check for any SKILL.md in subdirectories
+            skill_path = skill_dir
 
         # Traces
         trace_path = mem_dir / _TRACES_FILE

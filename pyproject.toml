@@ -29,4 +29,4 @@ dev = [
 evoskill = "evoskill.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["evoskill*", "evo_framework*"]
+include = ["evoskill*"]

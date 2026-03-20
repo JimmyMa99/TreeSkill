@@ -219,4 +219,4 @@ else:
 
 console.print("\n[bold]✨ Demo 完成！[/bold]")
 console.print("[dim]进化后的 skill 已保存到 demo/writing-skills.yaml[/dim]")
-console.print("[dim]你可以继续用 CLI 与它交互：python -m evo_framework.main --skill demo/writing-skills.yaml[/dim]\n")
+console.print("[dim]你可以继续用 CLI 与它交互：python -m evoskill.main --skill demo/example[/dim]\n")

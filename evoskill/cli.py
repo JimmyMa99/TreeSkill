@@ -37,6 +37,7 @@ from evoskill.checkpoint import CheckpointManager
 from evoskill.config import GlobalConfig
 from evoskill.llm import LLMClient
 from evoskill.optimizer import APOEngine
+from evoskill.resume import ResumeState
 from evoskill.schema import (
     ContentPart,
     Feedback,
@@ -272,9 +273,12 @@ class ChatCLI:
         return True
 
     def _cmd_save(self) -> bool:
-        skill_module.save(self._skill, self._skill_path)
+        if self._skill_tree:
+            self._skill_tree.save()
+        else:
+            skill_module.save(self._skill, self._skill_path)
         self._console.print(
-            f"[success]Skill saved →[/success] {self._skill_path}"
+            f"[success]Skill saved →[/success] {self._skill_path}/SKILL.md"
         )
         return True
 
@@ -287,17 +291,57 @@ class ChatCLI:
         if not traces:
             self._console.print("[warning]No feedback samples to optimize on.[/warning]")
             return True
-        with self._console.status("[dim]Running APO optimization…[/dim]"):
+
+        # Check for resume state
+        resume = ResumeState.load(self._skill_path)
+        if resume:
+            self._console.print(f"[yellow]⚠ 发现未完成的优化[/yellow]")
+            self._console.print(resume.summary())
+            choice = Prompt.ask("继续 (resume) 还是重新开始 (restart)?",
+                                choices=["resume", "restart"], default="resume")
+            if choice == "restart":
+                resume.clear()
+                resume = None
+
+        if resume is None:
+            resume = ResumeState.create(
+                skill_dir=self._skill_path,
+                metadata={"trace_count": len(traces)},
+            )
+
+        def _on_node_done(dotpath: str, node) -> None:
+            self._console.print(
+                f"  [success]✓[/success] {dotpath} → {node.skill.version}"
+            )
+
+        try:
             if self._skill_tree:
-                self._optimizer.evolve_tree(self._skill_tree, traces)
+                self._optimizer.evolve_tree(
+                    self._skill_tree, traces,
+                    resume=resume,
+                    on_node_done=_on_node_done,
+                )
                 self._skill = self._skill_tree.root.skill
                 self._skill_tree.save()
             else:
                 self._skill = self._optimizer.optimize(self._skill, traces)
                 skill_module.save(self._skill, self._skill_path)
+            resume.clear()  # success — remove resume file
+        except KeyboardInterrupt:
+            self._console.print(
+                "\n[warning]⚠ 优化被中断，进度已保存。再次 /optimize 可从断点继续。[/warning]"
+            )
+            return True
+        except Exception as e:
+            self._console.print(
+                f"\n[error]✗ 优化出错: {e}[/error]\n"
+                f"[dim]进度已保存，再次 /optimize 可从断点继续。[/dim]"
+            )
+            return True
+
         # Auto-save checkpoint
         self._ckpt.save(
-            self._skill_path if self._skill_tree else self._skill,
+            self._skill_path,
             trace_path=Path(self._config.storage.trace_path),
         )
         self._console.print(
@@ -316,7 +360,11 @@ class ChatCLI:
                 self._console.print("[warning]尚未设置优化方向。用法: /target <方向>[/warning]")
             return True
         self._skill = self._skill.model_copy(update={"target": text})
-        skill_module.save(self._skill, self._skill_path)
+        if self._skill_tree:
+            self._skill_tree.root.skill = self._skill
+            self._skill_tree.save()
+        else:
+            skill_module.save(self._skill, self._skill_path)
         self._console.print(
             f"[success]优化方向已设置:[/success] {text}"
         )

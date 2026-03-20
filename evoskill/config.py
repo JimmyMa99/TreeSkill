@@ -8,7 +8,7 @@ Priority (highest to lowest):
 
 Usage::
 
-    python -m evo_framework.main --config config.yaml --skill my-skill
+    python -m evoskill.main --config config.yaml --skill my-skill
 """
 
 from __future__ import annotations
@@ -74,6 +74,10 @@ class APOConfig(BaseSettings):
 
     max_steps: int = Field(default=3, ge=1)
     gradient_accumulation_steps: int = Field(default=5, ge=1)
+    num_candidates: int = Field(
+        default=2, ge=1,
+        description="每轮生成的候选 prompt 数量。>1 时启用多候选评分选择。",
+    )
 
 
 class RewardConfig(BaseSettings):

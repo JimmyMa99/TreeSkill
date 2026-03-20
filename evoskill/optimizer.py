@@ -5,8 +5,12 @@ of traces (with feedback), it:
 
 1. **Diagnoses** failures using critique / correction annotations.
 2. **Computes a "gradient"** by asking a judge model *why* the prompt failed.
-3. **Updates** the system prompt by asking the judge to rewrite it.
-4. **Applies** the change, returning a new Skill with an incremented version.
+   Uses multiple gradient templates for diversity (inspired by Microsoft
+   agent-lightning).
+3. **Generates N candidate** rewrites using different edit strategies.
+4. **Scores** each candidate against the feedback traces.
+5. **Selects** the best candidate (or keeps the original if none improve).
+6. **Applies** the change, returning a new Skill with an incremented version.
 
 Tree-aware extensions:
 - ``analyze_split_need`` — detect when a skill should be split
@@ -18,10 +22,22 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 from typing import Dict, List, Optional, TYPE_CHECKING
+
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from evoskill.config import GlobalConfig
 from evoskill.llm import LLMClient
+from evoskill.resume import ResumeState
 from evoskill.schema import Feedback, Message, Skill, Trace
 
 if TYPE_CHECKING:
@@ -30,8 +46,62 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Gradient prompt templates — 3 variants for diversity
+# ---------------------------------------------------------------------------
+
+_GRADIENT_TEMPLATES = [
+    # Variant 1: Simple, direct
+    (
+        "You are an expert prompt engineer. Analyze the conversation failures "
+        "below and explain concisely WHY the system prompt led to these problems. "
+        "Return a bullet list of specific, actionable issues."
+    ),
+    # Variant 2: Root-cause focused
+    (
+        "You are a senior prompt debugger. For each failure below, identify the "
+        "ROOT CAUSE in the system prompt — what instruction is missing, ambiguous, "
+        "or misleading? Be specific: quote the problematic part of the prompt and "
+        "explain how it caused the failure. Return 3-5 bullets."
+    ),
+    # Variant 3: Comprehensive evaluation
+    (
+        "You are a prompt quality auditor. Evaluate the system prompt against "
+        "these failures across these dimensions:\n"
+        "1. Instruction clarity — are the rules unambiguous?\n"
+        "2. Tone/style control — does the prompt prevent AI-sounding language?\n"
+        "3. Scope constraints — does the prompt enforce length/format limits?\n"
+        "4. Edge cases — does the prompt handle the scenarios that failed?\n"
+        "Return a structured critique with specific fixes for each dimension."
+    ),
+]
+
+# ---------------------------------------------------------------------------
+# Edit prompt templates — 2 variants (full rewrite vs conservative)
+# ---------------------------------------------------------------------------
+
+_EDIT_TEMPLATES = [
+    # Variant 1: Full rewrite
+    (
+        "You are an expert prompt engineer. Based on the failure analysis below, "
+        "rewrite the System Prompt to fix ALL identified issues. You may "
+        "restructure, reorder, or add new instructions as needed. "
+        "Preserve the core intent and any domain-specific knowledge. "
+        "Return ONLY the new prompt — no commentary, no markdown code fences."
+    ),
+    # Variant 2: Conservative one-point fix
+    (
+        "You are an expert prompt engineer. Based on the failure analysis below, "
+        "revise the System Prompt to address the SINGLE MOST CRITICAL issue. "
+        "Make minimal changes — keep the prompt close in tone, length, and "
+        "structure to the original. Do not address more than one issue. "
+        "Return ONLY the new prompt — no commentary, no markdown code fences."
+    ),
+]
+
+
 class APOEngine:
-    """Automatic Prompt Optimization engine.
+    """Automatic Prompt Optimization engine with multi-candidate scoring.
 
     Parameters
     ----------
@@ -52,51 +122,96 @@ class APOEngine:
     def optimize(self, current_skill: Skill, traces: List[Trace]) -> Skill:
         """Run a single APO cycle and return an improved Skill.
 
-        Parameters
-        ----------
-        current_skill :
-            The skill whose system prompt will be refined.
-        traces :
-            Interaction traces **that already have feedback attached**.
-            Traces without feedback are silently ignored.
+        Flow:
+        1. Diagnose — select traces with feedback
+        2. Gradient — compute textual gradient (randomly chosen template)
+        3. Candidates — generate N candidate rewrites **in parallel**
+        4. Score — evaluate all candidates **in parallel**
+        5. Select — pick the best (or keep original if none improve)
         """
-        # Step 1 — Diagnosis: select traces with feedback
+        # Step 1 — Diagnosis
         diagnosed = [t for t in traces if t.feedback is not None]
         if not diagnosed:
             logger.info("No feedback traces available — skipping optimization.")
             return current_skill
 
-        # Respect gradient_accumulation_steps — take the N most recent
         batch_size = self._config.apo.gradient_accumulation_steps
         diagnosed = diagnosed[-batch_size:]
 
-        # Step 2 — Gradient: ask the judge WHY the prompt failed
+        # Step 2 — Gradient (random template for diversity)
         gradient = self._compute_gradient(current_skill, diagnosed)
         logger.debug("Gradient analysis:\n%s", gradient)
 
-        # Step 3 — Update: ask the judge to REWRITE the prompt
-        new_prompt = self._apply_update(current_skill, gradient)
-        logger.debug("Updated system prompt:\n%s", new_prompt)
+        # Step 3 — Generate N candidates in parallel
+        num_candidates = self._config.apo.num_candidates
+        edit_message_batches = [
+            self._build_edit_messages(current_skill, gradient)
+            for _ in range(num_candidates)
+        ]
+        candidate_responses = self._llm.generate_batch(
+            edit_message_batches,
+            model=self._config.llm.judge_model,
+        )
+        candidates = [
+            r.content if isinstance(r.content, str) else str(r.content)
+            for r in candidate_responses
+            if r.content  # skip empty responses
+        ]
+        logger.info("Generated %d candidates (requested %d)", len(candidates), num_candidates)
 
-        # Step 4 — Apply: build the new Skill with bumped version
+        if not candidates:
+            logger.warning("All candidate generations failed — keeping original.")
+            return current_skill
+
+        # Step 4 — Score all (original + candidates) in parallel
+        all_prompts = [current_skill.system_prompt] + candidates
+        score_message_batches = [
+            self._build_score_messages(prompt, diagnosed)
+            for prompt in all_prompts
+        ]
+        score_responses = self._llm.generate_batch(
+            score_message_batches,
+            model=self._config.llm.judge_model,
+        )
+        scores = [
+            self._parse_score(r.content if isinstance(r.content, str) else str(r.content))
+            for r in score_responses
+        ]
+
+        # Log scores
+        logger.info("Current prompt score: %.2f", scores[0])
+        for i, s in enumerate(scores[1:]):
+            logger.info("Candidate %d score: %.2f", i + 1, s)
+
+        # Step 5 — Select best
+        best_idx = max(range(len(scores)), key=lambda i: scores[i])
+        if best_idx == 0:
+            logger.info("No candidate improved over current — keeping original.")
+            return current_skill
+
+        best_prompt = all_prompts[best_idx]
+        best_score = scores[best_idx]
         new_version = _increment_version(current_skill.version)
+        logger.info("Accepted candidate %d (score=%.2f) → %s", best_idx, best_score, new_version)
         return current_skill.model_copy(
             update={
-                "system_prompt": new_prompt,
+                "system_prompt": best_prompt,
                 "version": new_version,
             }
         )
 
     # ------------------------------------------------------------------
-    # Private helpers
+    # Gradient computation (with template diversity)
     # ------------------------------------------------------------------
 
     def _compute_gradient(self, skill: Skill, traces: List[Trace]) -> str:
-        """Ask the judge model to explain *why* the current prompt failed."""
+        """Ask the judge model to explain *why* the current prompt failed.
+
+        Randomly selects one of 3 gradient templates for diversity.
+        """
         failure_descriptions: List[str] = []
         for t in traces:
             feedback: Feedback = t.feedback  # type: ignore[assignment]
-            feedback_text = ""
             if feedback.correction:
                 feedback_text = f"The ideal response should have been: {feedback.correction}"
             elif feedback.critique:
@@ -104,7 +219,6 @@ class APOEngine:
             else:
                 feedback_text = f"Score: {feedback.score}"
 
-            # Summarize the user turn (last user message)
             user_text = _extract_last_user_text(t.inputs)
             agent_text = (
                 t.prediction.content
@@ -120,6 +234,9 @@ class APOEngine:
 
         failures_block = "\n".join(failure_descriptions)
 
+        # Randomly select gradient template
+        system_prompt = random.choice(_GRADIENT_TEMPLATES)
+
         target_hint = ""
         if skill.target:
             target_hint = (
@@ -128,21 +245,13 @@ class APOEngine:
             )
 
         messages = [
-            Message(
-                role="system",
-                content=(
-                    "You are an expert prompt engineer. Your task is to "
-                    "analyze conversation failures and explain WHY the "
-                    "system prompt failed to guide the agent correctly."
-                    + target_hint
-                ),
-            ),
+            Message(role="system", content=system_prompt + target_hint),
             Message(
                 role="user",
                 content=(
                     f"The current System Prompt is:\n\"\"\"\n{skill.system_prompt}\n\"\"\"\n\n"
                     f"Here are the failures:\n{failures_block}\n\n"
-                    "Explain concisely why the system prompt led to these failures."
+                    "Analyze the failures now."
                 ),
             ),
         ]
@@ -151,8 +260,17 @@ class APOEngine:
         )
         return response.content if isinstance(response.content, str) else str(response.content)
 
-    def _apply_update(self, skill: Skill, gradient: str) -> str:
-        """Ask the judge model to rewrite the system prompt."""
+    # ------------------------------------------------------------------
+    # Apply update (with edit strategy diversity)
+    # ------------------------------------------------------------------
+
+    def _build_edit_messages(self, skill: Skill, gradient: str) -> List[Message]:
+        """Build the messages for a single edit/rewrite request.
+
+        Each call randomly picks an edit template for diversity.
+        """
+        system_prompt = random.choice(_EDIT_TEMPLATES)
+
         target_hint = ""
         if skill.target:
             target_hint = (
@@ -160,18 +278,8 @@ class APOEngine:
                 f"Make sure the rewritten prompt aligns with this direction."
             )
 
-        messages = [
-            Message(
-                role="system",
-                content=(
-                    "You are an expert prompt engineer. Based on the analysis "
-                    "of failures below, rewrite the System Prompt to fix the "
-                    "identified issues WITHOUT breaking existing functionality. "
-                    "Return ONLY the new prompt — no commentary, no markdown "
-                    "code fences, just the raw prompt text."
-                    + target_hint
-                ),
-            ),
+        return [
+            Message(role="system", content=system_prompt + target_hint),
             Message(
                 role="user",
                 content=(
@@ -181,10 +289,96 @@ class APOEngine:
                 ),
             ),
         ]
+
+    def _apply_update(self, skill: Skill, gradient: str) -> str:
+        """Ask the judge model to rewrite the system prompt (sync, single call)."""
+        messages = self._build_edit_messages(skill, gradient)
         response = self._llm.generate(
             messages, model=self._config.llm.judge_model
         )
         return response.content if isinstance(response.content, str) else str(response.content)
+
+    # ------------------------------------------------------------------
+    # Candidate scoring (lightweight validation)
+    # ------------------------------------------------------------------
+
+    def _build_score_messages(self, prompt: str, traces: List[Trace]) -> List[Message]:
+        """Build the messages for a single scoring request."""
+        failure_summaries: List[str] = []
+        for t in traces:
+            fb: Feedback = t.feedback  # type: ignore[assignment]
+            user_text = _extract_last_user_text(t.inputs)
+            critique = fb.critique or fb.correction or f"score={fb.score}"
+            failure_summaries.append(f"- \"{user_text}\" → {critique}")
+
+        failures_block = "\n".join(failure_summaries)
+
+        return [
+            Message(
+                role="system",
+                content=(
+                    "You are a prompt quality evaluator. Score how well the "
+                    "given System Prompt would handle the listed failure cases. "
+                    "Consider whether the prompt's instructions would prevent "
+                    "each failure from recurring.\n\n"
+                    "Return ONLY a number between 0.0 and 1.0. Nothing else."
+                ),
+            ),
+            Message(
+                role="user",
+                content=(
+                    f"System Prompt to evaluate:\n\"\"\"\n{prompt}\n\"\"\"\n\n"
+                    f"Known failure cases:\n{failures_block}\n\n"
+                    "Score (0.0-1.0):"
+                ),
+            ),
+        ]
+
+    @staticmethod
+    def _parse_score(raw: str) -> float:
+        """Parse a score from judge model response.
+
+        Tries JSON first, then regex extraction of any float.
+        """
+        import re
+        raw = raw.strip()
+
+        # Try JSON parse first
+        try:
+            if raw.startswith("{"):
+                data = json.loads(raw)
+                score = float(data.get("score", 0.5))
+                return max(0.0, min(1.0, score))
+        except (json.JSONDecodeError, ValueError, TypeError):
+            pass
+
+        # Try direct float
+        try:
+            score = float(raw)
+            return max(0.0, min(1.0, score))
+        except ValueError:
+            pass
+
+        # Regex: find first float-like pattern
+        m = re.search(r"(\d+\.?\d*)", raw)
+        if m:
+            score = float(m.group(1))
+            if score <= 1.0:
+                return max(0.0, score)
+            elif score <= 100.0:
+                return score / 100.0  # handle percentage
+
+        logger.warning("Failed to parse score from: %s", raw[:100])
+        return 0.5
+
+    def _score_prompt(self, prompt: str, traces: List[Trace]) -> float:
+        """Score a prompt (sync, single call). Used by non-batch code paths."""
+        messages = self._build_score_messages(prompt, traces)
+        response = self._llm.generate(
+            messages, model=self._config.llm.judge_model
+        )
+        raw = response.content if isinstance(response.content, str) else str(response.content)
+        return self._parse_score(raw)
 
     # ------------------------------------------------------------------
     # Tree-aware optimization
@@ -298,84 +492,208 @@ class APOEngine:
         tree: "SkillTree",
         traces: List[Trace],
         auto_split: bool = True,
+        resume: Optional[ResumeState] = None,
+        on_node_done: Optional[callable] = None,
     ) -> "SkillTree":
-        """Recursively optimise every skill in a tree.
+        """Recursively optimise every skill in a tree with resume support.
 
         Strategy: optimise leaves first, then parents (bottom-up).
         If *auto_split* is ``True``, the engine will analyse each node
         for potential splits and apply them automatically.
 
+        Traces are routed to the correct node via ``Trace.node_path``.
+        Traces with ``node_path=None`` (legacy) are used by all nodes.
+
         Returns the mutated tree (same object).
         """
-        from evoskill.skill_tree import SkillTree  # noqa: deferred
+        total = _count_nodes(tree.root)
+        skipped = 0
+        if resume:
+            skipped = sum(
+                1 for _ in _iter_dotpaths(tree.root, "")
+                if resume.is_node_done(_)
+            )
 
-        self._evolve_node(tree.root, traces, auto_split=auto_split)
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold blue]{task.fields[node]}"),
+            BarColumn(bar_width=30),
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+            TextColumn("ETA"),
+            TimeRemainingColumn(),
+            transient=False,
+        ) as progress:
+            task_id = progress.add_task(
+                "Evolving",
+                total=total,
+                completed=skipped,
+                node="starting …",
+            )
+            self._evolve_node(
+                tree.root,
+                traces,
+                tree=tree,
+                auto_split=auto_split,
+                resume=resume,
+                on_node_done=on_node_done,
+                _path_prefix="",
+                _progress=progress,
+                _task_id=task_id,
+            )
         return tree
 
     def _evolve_node(
         self,
         node: "SkillNode",
         traces: List[Trace],
+        tree: "SkillTree",
         auto_split: bool = True,
+        resume: Optional[ResumeState] = None,
+        on_node_done: Optional[callable] = None,
+        _path_prefix: str = "",
+        _progress: Optional[Progress] = None,
+        _task_id: Optional[int] = None,
     ) -> None:
-        """Recursively optimise a single node and its children."""
+        """Recursively optimise a single node and its children.
+
+        Order:
+        1. Recurse into existing children (bottom-up)
+        2. Optimise this node (with multi-candidate scoring)
+        3. Auto-split if leaf node with conflicting feedback
+        4. Recurse into newly created children (so they get optimised too)
+        5. Save checkpoint
+        """
         from evoskill.skill_tree import SkillNode  # noqa: deferred
 
-        # Recurse into children first (bottom-up)
-        for child in list(node.children.values()):
-            self._evolve_node(child, traces, auto_split=auto_split)
+        dotpath = f"{_path_prefix}.{node.name}" if _path_prefix else node.name
 
-        # Optimise this node's skill
-        diagnosed = [t for t in traces if t.feedback is not None]
-        if not diagnosed:
+        # Step 1: Recurse into existing children (bottom-up)
+        for child in list(node.children.values()):
+            self._evolve_node(
+                child, traces,
+                tree=tree,
+                auto_split=auto_split,
+                resume=resume,
+                on_node_done=on_node_done,
+                _path_prefix=dotpath,
+                _progress=_progress,
+                _task_id=_task_id,
+            )
+
+        # Update progress bar description
+        if _progress is not None and _task_id is not None:
+            _progress.update(_task_id, node=dotpath)
+
+        # Skip if already done in a previous (interrupted) run
+        if resume and resume.is_node_done(dotpath):
+            logger.info("Skipping already-optimised node: %s", dotpath)
+            if _progress is not None and _task_id is not None:
+                _progress.update(_task_id, advance=1, node=f"{dotpath} (cached)")
             return
 
+        # Step 2: Route traces — only use traces belonging to this node
+        node_traces = _filter_traces_for_node(traces, dotpath)
+        diagnosed = [t for t in node_traces if t.feedback is not None]
+        if not diagnosed:
+            if resume:
+                resume.mark_node_done(dotpath)
+            if _progress is not None and _task_id is not None:
+                _progress.update(_task_id, advance=1, node=f"{dotpath} (no traces)")
+            return
+
+        logger.info(
+            "Optimising '%s' with %d/%d traces (node-specific/total)",
+            dotpath, len(diagnosed), len([t for t in traces if t.feedback]),
+        )
         node.skill = self.optimize(node.skill, diagnosed)
 
-        # Auto-split analysis (only for leaf or shallow nodes)
-        if auto_split and len(diagnosed) >= 2:
+        # Step 3: Auto-split (only for LEAF nodes to avoid overwriting children)
+        new_children: List[SkillNode] = []
+        if auto_split and node.is_leaf and len(diagnosed) >= 2:
             specs = self.analyze_split_need(node.skill, diagnosed)
             if specs:
                 enriched = self.generate_child_prompts(node.skill, specs)
+                child_names = []
                 for spec in enriched:
+                    if "name" not in spec:
+                        continue
                     child_skill = node.skill.model_copy(
                         update={
                             "name": spec["name"],
+                            "description": spec.get("description", ""),
                             "system_prompt": spec.get(
                                 "system_prompt", node.skill.system_prompt
                             ),
                             "version": "v1.0",
                         }
                     )
-                    from evoskill.schema import SkillMeta
-
                     child_node = SkillNode(
                         name=spec["name"],
                         skill=child_skill,
-                        meta=SkillMeta(
-                            name=spec["name"],
-                            description=spec.get("description"),
-                        ),
                     )
                     node.children[spec["name"]] = child_node
-                logger.info(
-                    "Auto-split '%s' into %d children: %s",
-                    node.name,
-                    len(enriched),
-                    [s["name"] for s in enriched],
-                )
+                    new_children.append(child_node)
+                    child_names.append(spec["name"])
+                if child_names:
+                    logger.info(
+                        "Auto-split '%s' into %d children: %s",
+                        node.name, len(child_names), child_names,
+                    )
+                    if resume:
+                        resume.mark_node_split(dotpath, child_names)
+                    # Grow the progress bar to account for new nodes
+                    if _progress is not None and _task_id is not None:
+                        _progress.update(_task_id, total=(_progress.tasks[_task_id].total or 0) + len(child_names))
+
+        # Step 4: Optimise newly created children
+        for child_node in new_children:
+            self._evolve_node(
+                child_node, traces,
+                tree=tree,
+                auto_split=False,
+                resume=resume,
+                on_node_done=on_node_done,
+                _path_prefix=dotpath,
+                _progress=_progress,
+                _task_id=_task_id,
+            )
+
+        # Step 5: Checkpoint
+        if resume:
+            tree.save()
+            resume.mark_node_done(dotpath)
+            logger.info("Progress saved after node: %s", dotpath)
+
+        if _progress is not None and _task_id is not None:
+            _progress.update(_task_id, advance=1, node=f"{dotpath} ✓")
+
+        if on_node_done:
+            on_node_done(dotpath, node)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _increment_version(version: str) -> str:
-    """Bump a ``vX.Y`` style version string → ``vX.(Y+1)``."""
-    if not version.startswith("v"):
-        return version + ".1"
-    parts = version[1:].split(".")
-    if len(parts) == 2 and parts[1].isdigit():
-        return f"v{parts[0]}.{int(parts[1]) + 1}"
+    """Bump the last numeric segment of a version string.
+
+    Examples: ``v1.0`` → ``v1.1``, ``1.0`` → ``1.1``,
+    ``v1.0.2`` → ``v1.0.3``, ``v2`` → ``v3``.
+    """
+    prefix = ""
+    v = version
+    if v.startswith("v"):
+        prefix = "v"
+        v = v[1:]
+
+    parts = v.split(".")
+    for i in range(len(parts) - 1, -1, -1):
+        if parts[i].isdigit():
+            parts[i] = str(int(parts[i]) + 1)
+            return prefix + ".".join(parts)
+
     return version + ".1"
 
 
@@ -385,9 +703,43 @@ def _extract_last_user_text(messages: List[Message]) -> str:
         if msg.role == "user":
             if isinstance(msg.content, str):
                 return msg.content
-            # Multimodal: collect text parts
             texts = [
                 p.text for p in msg.content if hasattr(p, "text")
             ]
             return " ".join(texts) if texts else "[image-only input]"
     return "[no user message]"
+
+
+def _count_nodes(node: "SkillNode") -> int:
+    """Count total nodes in the subtree (including *node* itself)."""
+    return 1 + sum(_count_nodes(c) for c in node.children.values())
+
+
+def _iter_dotpaths(node: "SkillNode", prefix: str):
+    """Yield all dotpaths in the subtree (DFS, children-first like evolve)."""
+    dotpath = f"{prefix}.{node.name}" if prefix else node.name
+    for child in node.children.values():
+        yield from _iter_dotpaths(child, dotpath)
+    yield dotpath
+
+
+def _filter_traces_for_node(traces: List[Trace], dotpath: str) -> List[Trace]:
+    """Return traces that belong to *dotpath*.
+
+    Routing rules:
+    - ``trace.node_path == dotpath`` → exact match, always included.
+    - ``trace.node_path`` starts with ``dotpath + "."`` → child trace,
+      included for the parent so it can see its subtree's feedback.
+    - ``trace.node_path is None`` → legacy trace (no routing info),
+      included for ALL nodes to preserve backward compatibility.
+    """
+    result: List[Trace] = []
+    prefix = dotpath + "."
+    for t in traces:
+        if t.node_path is None:
+            # Legacy trace — no routing info, use everywhere
+            result.append(t)
+        elif t.node_path == dotpath or t.node_path.startswith(prefix):
+            # Exact match or descendant
+            result.append(t)
+    return result

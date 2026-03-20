@@ -1,0 +1,8 @@
+# 测试用配置：低 temperature 保证输出稳定
+temperature: 0.3
+
+few_shot_messages:
+  - role: user
+    content: "什么是 Python 的 GIL？"
+  - role: assistant
+    content: "GIL 是全局解释器锁，同一时刻只允许一个线程执行 Python 字节码。它简化了内存管理，但限制了多线程 CPU 密集型任务的并行性。"

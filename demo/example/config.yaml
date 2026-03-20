@@ -3,7 +3,7 @@
 # ============================================================
 #
 # 使用方式:
-#   python -m evo_framework.main --config demo/example/config.yaml --skill demo/example/skill.yaml
+#   python -m evoskill.main --config demo/example/config.yaml --skill demo/example
 #
 # 优先级: 环境变量 > .env 文件 > 本 YAML > Pydantic 默认值
 # 即: 本文件写了 model: gpt-4o，但环境变量 EVO_LLM_MODEL=xxx 会覆盖它

@@ -208,4 +208,4 @@ if Confirm.ask("\n继续生成内容测试?", default=True):
 
 console.print("\n[bold]✨ Demo 完成！[/bold]")
 console.print(f"[dim]进化后的 skill 已保存到 {scratch_path}[/dim]")
-console.print(f"[dim]你可以继续用 CLI 与它交互：python -m evo_framework.main --skill {scratch_path}[/dim]\n")
+console.print(f"[dim]你可以继续用 CLI 与它交互：python -m evoskill.main --skill {scratch_path}[/dim]\n")

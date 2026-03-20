@@ -112,29 +112,22 @@ def test_adapter_imports():
 
 
 def test_backward_compatibility():
-    """测试向后兼容"""
+    """测试向后兼容（evo_framework 已移除，此测试验证 evoskill 直接导入）"""
     print("\n" + "=" * 60)
-    print("测试 4: 向后兼容性（evo_framework 导入）")
+    print("测试 4: evoskill 直接导入")
     print("=" * 60)
 
     try:
-        # 抑制警告以测试功能
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        from evoskill import TextPrompt, registry
 
-            from evo_framework import TextPrompt, registry
+        print("✅ evoskill 导入成功")
 
-            print("✅ evo_framework 导入成功（向后兼容）")
-            print("   ⚠️  应显示 DeprecationWarning（已抑制）")
-
-            # 测试功能
-            prompt = TextPrompt(content="向后兼容测试")
-            print(f"✅ 创建对象成功: {prompt.content[:20]}...")
+        prompt = TextPrompt(content="导入测试")
+        print(f"✅ 创建对象成功: {prompt.content[:20]}...")
 
         return True
     except Exception as e:
-        print(f"❌ 向后兼容测试失败:")
+        print(f"❌ 导入测试失败:")
         traceback.print_exc()
         return False
 

@@ -144,7 +144,7 @@ from evoskill.tools import (
     create_mcp_tool,
 )
 
-# Legacy imports (v0.1 - backward compatibility)
+# Schema imports
 from evoskill.schema import (
     ContentPart,
     Feedback as LegacyFeedback,
@@ -156,14 +156,30 @@ from evoskill.schema import (
     Trace,
 )
 from evoskill.config import GlobalConfig
-from evoskill.skill_tree import SkillTree
+from evoskill.skill_tree import SkillTree, SkillNode
 from evoskill.checkpoint import CheckpointManager
+from evoskill.resume import ResumeState
 
-# Skill management functions
+# Skill management functions (Agent Skills format)
 from evoskill.skill import (
     load as load_skill,
     save as save_skill,
     compile_messages,
+    SKILL_FILE,
+    CONFIG_FILE,
+    SCRIPT_FILE,
+)
+
+# Script validation & storage
+from evoskill.script import (
+    ScriptValidator,
+    ScriptValidationResult,
+    ScriptIssue,
+    validate_script,
+    validate_script_file,
+    load_script,
+    save_script,
+    load_script_as_tools,
 )
 
 __version__ = "0.2.0"
@@ -238,7 +254,7 @@ __all__ = [
     "create_http_tool",
     "create_mcp_tool",
 
-    # Legacy (v0.1 - backward compatibility)
+    # Schema & config
     "CheckpointManager",
     "ContentPart",
     "LegacyFeedback",
@@ -247,14 +263,28 @@ __all__ = [
     "Message",
     "Skill",
     "SkillMeta",
+    "SkillNode",
     "SkillTree",
     "TextContent",
     "Trace",
 
-    # Skill management functions
+    # Skill management functions (Agent Skills format)
     "load_skill",
     "save_skill",
     "compile_messages",
+    "SKILL_FILE",
+    "CONFIG_FILE",
+    "SCRIPT_FILE",
+
+    # Script validation & storage
+    "ScriptValidator",
+    "ScriptValidationResult",
+    "ScriptIssue",
+    "validate_script",
+    "validate_script_file",
+    "load_script",
+    "save_script",
+    "load_script_as_tools",
 
     # Version
     "__version__",
