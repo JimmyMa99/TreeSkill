@@ -272,9 +272,12 @@ class ChatCLI:
         return True
 
     def _cmd_save(self) -> bool:
-        skill_module.save(self._skill, self._skill_path)
+        if self._skill_tree:
+            self._skill_tree.save()
+        else:
+            skill_module.save(self._skill, self._skill_path)
         self._console.print(
-            f"[success]Skill saved →[/success] {self._skill_path}"
+            f"[success]Skill saved →[/success] {self._skill_path}/SKILL.md"
         )
         return True
 
@@ -297,7 +300,7 @@ class ChatCLI:
                 skill_module.save(self._skill, self._skill_path)
         # Auto-save checkpoint
         self._ckpt.save(
-            self._skill_path if self._skill_tree else self._skill,
+            self._skill_path,
             trace_path=Path(self._config.storage.trace_path),
         )
         self._console.print(
@@ -316,7 +319,11 @@ class ChatCLI:
                 self._console.print("[warning]尚未设置优化方向。用法: /target <方向>[/warning]")
             return True
         self._skill = self._skill.model_copy(update={"target": text})
-        skill_module.save(self._skill, self._skill_path)
+        if self._skill_tree:
+            self._skill_tree.root.skill = self._skill
+            self._skill_tree.save()
+        else:
+            skill_module.save(self._skill, self._skill_path)
         self._console.print(
             f"[success]优化方向已设置:[/success] {text}"
         )

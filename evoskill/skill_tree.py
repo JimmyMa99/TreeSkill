@@ -1,21 +1,24 @@
-"""Skill Tree — hierarchical skill management with folder-based structure.
+"""Skill Tree — hierarchical skill management following Agent Skills standard.
 
 A "skill tree" is a directory on disk where each sub-directory represents
-a child skill group.  The layout looks like::
+a child skill.  Each directory contains a ``SKILL.md`` (and optional
+``config.yaml``), following the Agent Skills specification::
 
     my-skills/
-    ├── _meta.yaml          # package-level metadata
-    ├── root.yaml           # root skill (the "catch-all" prompt)
+    ├── SKILL.md            # root skill
+    ├── config.yaml         # optional root config
     ├── social/
-    │   ├── _meta.yaml
-    │   ├── root.yaml       # social sub-skill
-    │   ├── moments.yaml    # WeChat Moments specialty
-    │   └── weibo.yaml
+    │   ├── SKILL.md        # social sub-skill
+    │   ├── moments/
+    │   │   └── SKILL.md    # WeChat Moments specialty
+    │   └── weibo/
+    │       └── SKILL.md
     └── business/
-        ├── _meta.yaml
-        ├── root.yaml
-        ├── email.yaml
-        └── product.yaml
+        ├── SKILL.md
+        ├── email/
+        │   └── SKILL.md
+        └── product/
+            └── SKILL.md
 
 At runtime, the tree is loaded into a ``SkillNode`` object that mirrors the
 folder hierarchy.  Nodes can be added, split, merged, and pruned — either
@@ -30,15 +33,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-import yaml
-
-from evoskill.schema import Skill, SkillMeta
-from evoskill import skill as skill_module
+from evoskill.schema import Skill
+from evoskill.skill import SKILL_FILE, load as _load_skill, save as _save_skill
 
 logger = logging.getLogger(__name__)
-
-_META_FILE = "_meta.yaml"
-_ROOT_SKILL = "root.yaml"
 
 
 # ---------------------------------------------------------------------------
@@ -52,32 +50,28 @@ class SkillNode:
     Attributes
     ----------
     name : str
-        Human-readable name (from ``_meta.yaml`` or directory name).
+        Human-readable name (from SKILL.md frontmatter or directory name).
     skill : Skill
-        The ``root.yaml`` skill attached to this node.
+        The skill loaded from this node's SKILL.md.
     children : dict[str, SkillNode]
         Ordered mapping of child-name → child-node.
-    meta : SkillMeta | None
-        Extra metadata loaded from ``_meta.yaml``.
     path : Path | None
         Disk path this node was loaded from (``None`` for in-memory nodes).
     age : int
-        Number of optimization rounds this node has survived. Used for progressive disclosure.
+        Number of optimization rounds this node has survived.
     usage_count : int
         Number of times this node has been used/routed to.
     collapsed : bool
         If True, this node is "folded" (hidden from routing) but not deleted.
-        Implements progressive disclosure - preserve knowledge for future use.
     """
 
     name: str
     skill: Skill
     children: Dict[str, "SkillNode"] = field(default_factory=dict)
-    meta: Optional[SkillMeta] = None
     path: Optional[Path] = None
-    age: int = 0  # For progressive disclosure - tracks node maturity
-    usage_count: int = 0  # Track how often this node is used
-    collapsed: bool = False  # Progressive disclosure - hide without deleting
+    age: int = 0
+    usage_count: int = 0
+    collapsed: bool = False
 
     # -- convenience -------------------------------------------------------
 
@@ -126,16 +120,13 @@ class SkillTree:
     def load(cls, path: Union[str, Path]) -> "SkillTree":
         """Recursively load a skill tree from a directory.
 
-        If *path* points to a single ``.yaml`` file instead of a directory,
-        a trivial one-node tree is returned (backwards-compatible with flat
-        skill files).
+        *path* must be a directory containing a SKILL.md at the root.
         """
         path = Path(path)
-        if path.is_file():
-            # Flat skill file → wrap in a single-node tree
-            sk = skill_module.load(path)
-            node = SkillNode(name=sk.name, skill=sk, path=path.parent)
-            return cls(root=node, base_path=path.parent)
+        if not path.is_dir():
+            raise FileNotFoundError(
+                f"Skill tree path must be a directory: {path}"
+            )
 
         root = _load_node(path)
         return cls(root=root, base_path=path)
@@ -200,8 +191,9 @@ class SkillTree:
         if child_name in parent.children:
             raise ValueError(f"Child '{child_name}' already exists under '{parent.name}'")
 
-        meta = SkillMeta(name=child_name, description=description)
-        child = SkillNode(name=child_name, skill=skill, meta=meta)
+        if description and not skill.description:
+            skill = skill.model_copy(update={"description": description})
+        child = SkillNode(name=child_name, skill=skill)
         parent.children[child_name] = child
         logger.info("Added child '%s' under '%s'", child_name, parent.name)
         return child
@@ -227,15 +219,12 @@ class SkillTree:
             child_skill = parent.skill.model_copy(
                 update={
                     "name": spec["name"],
+                    "description": spec.get("description", ""),
                     "system_prompt": spec["system_prompt"],
                     "version": "v1.0",
                 }
             )
-            meta = SkillMeta(
-                name=spec["name"],
-                description=spec.get("description"),
-            )
-            child = SkillNode(name=spec["name"], skill=child_skill, meta=meta)
+            child = SkillNode(name=spec["name"], skill=child_skill)
             parent.children[spec["name"]] = child
             created.append(child)
 
@@ -255,29 +244,23 @@ class SkillTree:
         if len(node_paths) < 2:
             raise ValueError("Need at least 2 nodes to merge")
 
-        # Find common parent
         nodes = [self.get(p) for p in node_paths]
         parent_path = ".".join(node_paths[0].split(".")[:-1])
         parent = self.get(parent_path) if parent_path else self.root
 
-        # Remove old children
         for np in node_paths:
             child_name = np.split(".")[-1]
             parent.children.pop(child_name, None)
 
-        # Create merged child
         merged_skill = nodes[0].skill.model_copy(
             update={
                 "name": merged_name,
+                "description": f"Merged from: {[n.name for n in nodes]}",
                 "system_prompt": merged_prompt,
                 "version": "v1.0",
             }
         )
-        merged_node = SkillNode(
-            name=merged_name,
-            skill=merged_skill,
-            meta=SkillMeta(name=merged_name, description=f"Merged from: {node_paths}"),
-        )
+        merged_node = SkillNode(name=merged_name, skill=merged_skill)
         parent.children[merged_name] = merged_node
         logger.info("Merged %s → '%s'", node_paths, merged_name)
         return merged_node
@@ -307,39 +290,14 @@ class SkillTree:
 
 def _load_node(directory: Path) -> SkillNode:
     """Recursively load a single tree node from *directory*."""
-    # Load meta
-    meta: Optional[SkillMeta] = None
-    meta_path = directory / _META_FILE
-    if meta_path.is_file():
-        raw = yaml.safe_load(meta_path.read_text(encoding="utf-8")) or {}
-        meta = SkillMeta.model_validate(raw)
+    sk = _load_skill(directory)
+    node = SkillNode(name=sk.name, skill=sk, path=directory)
 
-    # Load root skill
-    root_path = directory / _ROOT_SKILL
-    if root_path.is_file():
-        sk = skill_module.load(root_path)
-    else:
-        # Fallback: any single .yaml file that isn't _meta.yaml
-        yamls = [
-            f for f in directory.glob("*.yaml")
-            if f.name != _META_FILE
-        ]
-        if yamls:
-            sk = skill_module.load(yamls[0])
-        else:
-            raise FileNotFoundError(
-                f"No root.yaml or skill YAML found in {directory}"
-            )
-
-    name = meta.name if meta else directory.name
-    node = SkillNode(name=name, skill=sk, meta=meta, path=directory)
-
-    # Recurse into subdirectories
+    # Recurse into subdirectories that contain a SKILL.md
     for sub in sorted(directory.iterdir()):
         if sub.is_dir() and not sub.name.startswith((".", "_")):
-            # Only load if it contains at least one yaml
-            has_yaml = any(sub.glob("*.yaml"))
-            if has_yaml:
+            skill_md = sub / SKILL_FILE
+            if skill_md.is_file():
                 child = _load_node(sub)
                 node.children[sub.name] = child
 
@@ -350,21 +308,10 @@ def _save_node(node: SkillNode, directory: Path) -> None:
     """Recursively save a tree node to *directory*."""
     directory.mkdir(parents=True, exist_ok=True)
 
-    # Save meta
-    if node.meta:
-        meta_data = node.meta.model_dump(mode="json")
-        meta_path = directory / _META_FILE
-        meta_path.write_text(
-            yaml.dump(meta_data, default_flow_style=False,
-                      sort_keys=False, allow_unicode=True),
-            encoding="utf-8",
-        )
-
-    # Save root skill
-    logger.info(f"💾 Saving skill for node '{node.name}':")
+    logger.info(f"Saving skill for node '{node.name}':")
     logger.info(f"   Version: {node.skill.version}")
     logger.info(f"   Prompt: {node.skill.system_prompt[:100]}...")
-    skill_module.save(node.skill, directory / _ROOT_SKILL)
+    _save_skill(node.skill, directory)
 
     # Save children (and clean up removed ones)
     existing_dirs = {
@@ -376,7 +323,7 @@ def _save_node(node: SkillNode, directory: Path) -> None:
     # Remove directories for pruned children
     for removed in existing_dirs - current_children:
         removed_path = directory / removed
-        if (removed_path / _ROOT_SKILL).exists() or (removed_path / _META_FILE).exists():
+        if (removed_path / SKILL_FILE).exists():
             shutil.rmtree(removed_path)
             logger.debug("Removed pruned child directory: %s", removed_path)
 
@@ -399,7 +346,7 @@ def _format_tree(
     connector = "└── " if is_last else "├── "
     version = node.skill.version
     leaf_tag = "" if node.children else " 🍂"
-    desc = f" — {node.meta.description}" if node.meta and node.meta.description else ""
+    desc = f" — {node.skill.description}" if node.skill.description else ""
     lines.append(f"{prefix}{connector}{node.name} ({version}){leaf_tag}{desc}")
 
     child_prefix = prefix + ("    " if is_last else "│   ")

@@ -29,32 +29,38 @@ console = Console()
 
 
 def _resolve_skill_path(name_or_path: str, config: GlobalConfig) -> Path:
-    """Resolve a skill name (looked up inside ``config.storage.skill_path``)
-    or an explicit file path to an absolute ``Path``."""
+    """Resolve a skill name or path to a directory containing SKILL.md.
+
+    Resolution order:
+    1. Exact path (file or directory)
+    2. Named directory inside ``config.storage.skill_path``
+    3. Create a new default skill directory
+    """
     p = Path(name_or_path)
-    if p.is_file() or p.is_dir():
+    # Direct path
+    if p.is_dir():
         return p.resolve()
-    # Try inside the configured skill directory
-    for ext in (".yaml", ".yml", ".json"):
-        candidate = Path(config.storage.skill_path) / f"{name_or_path}{ext}"
-        if candidate.is_file():
-            return candidate.resolve()
-    # Try as a directory
+    if p.is_file() and p.name.lower().endswith(".md"):
+        return p.parent.resolve()
+
+    # Try as a named skill inside the skills directory
     candidate_dir = Path(config.storage.skill_path) / name_or_path
-    if candidate_dir.is_dir():
+    if candidate_dir.is_dir() and (candidate_dir / "SKILL.md").is_file():
         return candidate_dir.resolve()
-    # Fall back — create a minimal default skill
-    default = Path(config.storage.skill_path) / f"{name_or_path}.yaml"
-    default.parent.mkdir(parents=True, exist_ok=True)
+
+    # Fall back — create a minimal default skill directory
+    default_dir = Path(config.storage.skill_path) / name_or_path
+    default_dir.mkdir(parents=True, exist_ok=True)
     from evoskill.schema import Skill
 
     default_skill = Skill(
         name=name_or_path,
+        description=f"Default skill: {name_or_path}",
         system_prompt="You are a helpful assistant.",
     )
-    skill_module.save(default_skill, default)
-    console.print(f"[dim]Created default skill → {default}[/dim]")
-    return default.resolve()
+    skill_module.save(default_skill, default_dir)
+    console.print(f"[dim]Created default skill → {default_dir}/SKILL.md[/dim]")
+    return default_dir.resolve()
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -65,7 +71,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--skill",
         default="default",
-        help="Skill name (resolved in skills/) or path to a YAML/JSON file or skill-tree directory.",
+        help="Skill name (resolved in skills/) or path to a skill directory containing SKILL.md.",
     )
     parser.add_argument(
         "--config",
@@ -124,17 +130,20 @@ def main(argv: list[str] | None = None) -> None:
     else:
         skill_path = _resolve_skill_path(args.skill, config)
 
-    # --- Load skill (file or tree) ---
+    # --- Load skill (always a directory with SKILL.md) ---
     skill_tree = None
-    if skill_path.is_dir():
-        skill_tree = SkillTree.load(skill_path)
-        loaded_skill = skill_tree.root.skill
+    skill_tree = SkillTree.load(skill_path)
+    loaded_skill = skill_tree.root.skill
+    leaf_count = skill_tree.root.leaf_count()
+    if leaf_count > 1:
         console.print(
             f"[dim]Loaded skill tree from {skill_path} "
-            f"({skill_tree.root.leaf_count()} leaves)[/dim]"
+            f"({leaf_count} leaves)[/dim]"
         )
     else:
-        loaded_skill = skill_module.load(skill_path)
+        console.print(
+            f"[dim]Loaded skill from {skill_path}/SKILL.md[/dim]"
+        )
 
     # --- Optimize mode ---
     if args.optimize:
@@ -149,18 +158,14 @@ def main(argv: list[str] | None = None) -> None:
             f"[bold]Running APO[/bold] on {len(traces)} feedback traces …"
         )
 
-        if skill_tree:
-            engine.evolve_tree(skill_tree, traces)
-            skill_tree.save()
-            new_skill = skill_tree.root.skill
-        else:
-            new_skill = engine.optimize(loaded_skill, traces)
-            skill_module.save(new_skill, skill_path)
+        engine.evolve_tree(skill_tree, traces)
+        skill_tree.save()
+        new_skill = skill_tree.root.skill
 
         # Save checkpoint
         ckpt_mgr = CheckpointManager(args.ckpt_dir)
         ckpt_path = ckpt_mgr.save(
-            skill_path if skill_tree else new_skill,
+            skill_path,
             trace_path=Path(config.storage.trace_path),
         )
 

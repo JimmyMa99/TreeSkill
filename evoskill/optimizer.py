@@ -341,21 +341,16 @@ class APOEngine:
                     child_skill = node.skill.model_copy(
                         update={
                             "name": spec["name"],
+                            "description": spec.get("description", ""),
                             "system_prompt": spec.get(
                                 "system_prompt", node.skill.system_prompt
                             ),
                             "version": "v1.0",
                         }
                     )
-                    from evoskill.schema import SkillMeta
-
                     child_node = SkillNode(
                         name=spec["name"],
                         skill=child_skill,
-                        meta=SkillMeta(
-                            name=spec["name"],
-                            description=spec.get("description"),
-                        ),
                     )
                     node.children[spec["name"]] = child_node
                 logger.info(

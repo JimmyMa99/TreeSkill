@@ -70,12 +70,36 @@ class Message(BaseModel):
 # ---------------------------------------------------------------------------
 
 class Skill(BaseModel):
-    """A Skill wraps a system prompt together with optional few-shot
-    examples and model-level configuration (temperature, etc.)."""
+    """A Skill following the Agent Skills standard (https://agentskills.io).
 
-    name: str
+    On disk, a Skill is a directory containing a ``SKILL.md`` with YAML
+    frontmatter (name, description, metadata) and a Markdown body that
+    serves as the system prompt.  An optional ``config.yaml`` stores
+    few-shot examples and model-level configuration.
+
+    Field mapping::
+
+        SKILL.md frontmatter.name        → name
+        SKILL.md frontmatter.description → description
+        SKILL.md frontmatter.metadata    → metadata (version, target, …)
+        SKILL.md body                    → system_prompt
+        config.yaml few_shot_messages    → few_shot_messages
+        config.yaml (rest)               → config
+    """
+
+    name: str = Field(
+        ...,
+        description="Skill 名称，kebab-case，≤64字符，需与目录名一致。",
+    )
+    description: str = Field(
+        default="",
+        description="Skill 描述，≤1024字符。说明 skill 的用途和触发条件。",
+    )
     version: str = "v1.0"
-    system_prompt: str
+    system_prompt: str = Field(
+        default="",
+        description="SKILL.md Markdown body — 即 LLM 的 system prompt，也是 APO 优化目标。",
+    )
     target: Optional[str] = Field(
         default=None,
         description="用户一句话优化方向，如'更像人'、'更简洁'。APO 优化时会参考此目标。",
