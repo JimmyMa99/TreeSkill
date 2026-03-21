@@ -215,7 +215,7 @@ evo_framework/
 ├── adapters/                  # 具体适配器实现
 │   ├── __init__.py
 │   ├── openai.py             # ✅ OpenAI适配器
-│   └── anthropic.py          # ⏳ TODO: Anthropic适配器
+│   └── anthropic.py          # ✅ Anthropic适配器
 │
 tests/test_openai_adapter.py         # 基础测试（无API）
 tests/test_openai_siliconflow.py     # 完整测试（真实API）
