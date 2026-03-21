@@ -121,6 +121,47 @@ The following items have been implemented and are no longer tracked:
   - `evoskill/core/optimizer.py` - enhance `compute_gradient()` for multimodal
   - `evoskill/core/abc.py` - add multimodal-specific methods to `ModelAdapter`
 
+## P1 - Important (Skill Ecosystem)
+
+- [ ] **Remote skill loading from GitHub**
+
+  Load skills directly from GitHub repositories without manual cloning.
+
+  **Proposed usage**:
+  ```bash
+  python -m evoskill.main --skill github://user/repo/path/to/skill
+  ```
+  Or in CLI:
+  ```
+  /fetch user/repo/skills/writing-assistant
+  ```
+
+  **Implementation**:
+  - Use `git clone --depth 1 --sparse` to fetch only the skill directory
+  - Cache downloaded skills locally in `~/.evoskill/cache/`
+  - Support version pinning via branch/tag (`github://user/repo@v1.0/path`)
+
+  **Files to create/update**:
+  - `evoskill/remote.py` - remote skill fetching and caching
+  - `evoskill/main.py` - handle `github://` scheme in `--skill`
+  - `evoskill/cli.py` - add `/fetch` command
+
+- [ ] **Publish optimized skills**
+
+  One-click export/publish of APO-optimized skills to share with the community.
+
+  **Proposed usage**:
+  ```
+  /publish              # push to configured GitHub repo
+  /export-skill ./out/  # export as standard Agent Skills directory
+  ```
+
+  **Key value**: Other platforms share hand-written skills; EvoSkill shares **automatically optimized** skills -- this is the differentiator.
+
+  **Files to create/update**:
+  - `evoskill/publish.py` - skill packaging and GitHub push
+  - `evoskill/cli.py` - add `/publish` and `/export-skill` commands
+
 ## Notes
 
 - **v0.2 architecture**: The new `evoskill/core/` package provides clean abstractions (`ModelAdapter`, `OptimizablePrompt`, `TrainFreeOptimizer`)
