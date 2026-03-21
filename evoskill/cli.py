@@ -82,6 +82,8 @@ _COMMAND_SPECS = [
     ("/tree", "", "Show the current skill tree"),
     ("/select", "<path>", "Switch to a node inside the skill tree"),
     ("/split", "", "Analyze whether the current skill should be split"),
+    ("/fetch", "<github-uri>", "Fetch a skill from GitHub (e.g. user/repo/path)"),
+    ("/export-skill", "<output-dir>", "Export current skill as standard Agent Skills directory"),
     ("/ckpt", "", "Show available checkpoints"),
     ("/restore", "<name>", "Restore from a checkpoint"),
     ("/quit", "", "Exit the CLI"),
@@ -295,6 +297,10 @@ class ChatCLI:
             return self._cmd_select(arg)
         if cmd == "/split":
             return self._cmd_split()
+        if cmd == "/fetch":
+            return self._cmd_fetch(arg)
+        if cmd == "/export-skill":
+            return self._cmd_export_skill(arg)
         if cmd == "/ckpt":
             return self._cmd_ckpt()
         if cmd == "/restore":
@@ -580,6 +586,43 @@ class ChatCLI:
             )
         except Exception as e:
             self._console.print(f"[error]Restore failed: {e}[/error]")
+        return True
+
+    # ------------------------------------------------------------------
+    # Remote & Export
+    # ------------------------------------------------------------------
+
+    def _cmd_fetch(self, uri: str) -> bool:
+        if not uri:
+            self._console.print("[error]Usage: /fetch <github-uri>[/error]")
+            self._console.print("[dim]Example: /fetch JimmyMa99/EvoSkill/demo/example[/dim]")
+            return True
+        # Normalize: accept both "github://user/repo/path" and "user/repo/path"
+        if not uri.startswith("github://"):
+            uri = f"github://{uri}"
+        try:
+            from evoskill.remote import fetch_skill
+            with self._console.status("[dim]Fetching from GitHub...[/dim]"):
+                skill_path = fetch_skill(uri)
+            fetched_skill = skill_module.load(skill_path)
+            self._console.print(
+                f"[success]Fetched:[/success] {fetched_skill.name} "
+                f"({fetched_skill.version}) -> {skill_path}"
+            )
+        except Exception as e:
+            self._console.print(f"[error]Fetch failed: {e}[/error]")
+        return True
+
+    def _cmd_export_skill(self, path_str: str) -> bool:
+        output = path_str.strip() or f"./{self._skill.name}-export"
+        output_path = Path(output)
+        try:
+            skill_module.save(self._skill, output_path)
+            self._console.print(
+                f"[success]Skill exported:[/success] {output_path}/SKILL.md"
+            )
+        except Exception as e:
+            self._console.print(f"[error]Export failed: {e}[/error]")
         return True
 
     # ------------------------------------------------------------------

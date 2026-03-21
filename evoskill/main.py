@@ -193,6 +193,10 @@ def main(argv: list[str] | None = None) -> None:
         console.print(
             f"[green]✓[/green] Restored from checkpoint: [cyan]{args.ckpt}[/cyan]"
         )
+    elif args.skill.startswith("github://"):
+        from evoskill.remote import fetch_skill
+        skill_path = fetch_skill(args.skill)
+        console.print(f"[green]✓[/green] Fetched remote skill: [cyan]{skill_path}[/cyan]")
     else:
         skill_path = _resolve_skill_path(args.skill, config)
 
