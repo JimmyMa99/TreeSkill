@@ -18,6 +18,11 @@ The following items have been implemented and are no longer tracked:
 - ✅ **Built-in tools** - Python function, HTTP, and MCP tool support in `evoskill/tools.py`
 - ✅ **Fix duplicate trace writes when feedback is attached** - `/bad` and `/rewrite` now update traces by ID via `TraceStorage.upsert()` with load-time deduplication in `evoskill/storage.py`
 - ✅ **Fix SiliconFlow pytest return-value warning** - `tests/test_openai_siliconflow.py` now separates reusable script logic from the pytest test function
+- ✅ **DPO preference data export** - `/export-dpo` command in CLI, `TraceStorage.export_dpo()` and `get_dpo_pairs()` in `evoskill/storage.py`
+- ✅ **Human-in-the-loop annotation mode** - `--annotate --dataset` with auto/manual judge toggle (`/auto`, `/manual`), implemented in `evoskill/annotate.py`
+- ✅ **Non-interactive resume skip** - `--no-resume` flag to skip interactive resume prompt, fixes hang in CI/script environments
+- ✅ **Dataset-driven evaluation pipeline** - `DataLoader` in `evoskill/dataset.py` and `Evaluator` in `evoskill/evaluator.py` for ChatML JSONL datasets
+- ✅ **English documentation** - Full English README at `docs_en/README.md` with language switcher
 
 ## P0 - Critical
 
