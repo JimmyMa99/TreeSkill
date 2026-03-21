@@ -1,12 +1,12 @@
-"""Tool Registry - 用户自定义工具注册系统
+"""Tool Registry - user-defined tool registration system.
 
-这个模块提供了一个灵活的工具注册系统，支持：
-1. Python函数工具（直接调用）
-2. HTTP API工具（远程调用）
-3. MCP工具（Model Context Protocol）
-4. 用户自定义工具
+This module provides a flexible registry for:
+1. Python function tools (direct invocation)
+2. HTTP API tools (remote invocation)
+3. MCP tools (Model Context Protocol)
+4. User-defined tools
 
-使用装饰器或配置文件即可注册，非常用户友好。
+You can register tools with decorators or configuration files.
 """
 
 from __future__ import annotations
@@ -23,31 +23,31 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# 工具抽象基类
+# Abstract tool base class
 # ===========================================================================
 
 class BaseTool(ABC):
-    """所有工具的基类"""
+    """Base class for all tools."""
 
     @property
     @abstractmethod
     def name(self) -> str:
-        """工具名称"""
+        """Tool name."""
         pass
 
     @property
     @abstractmethod
     def description(self) -> str:
-        """工具描述（用于LLM理解）"""
+        """Tool description used by the LLM."""
         pass
 
     @abstractmethod
     def execute(self, *args, **kwargs) -> Any:
-        """执行工具"""
+        """Execute the tool."""
         pass
 
     def to_schema(self) -> Dict[str, Any]:
-        """生成OpenAI function calling schema"""
+        """Generate an OpenAI function-calling schema."""
         return {
             "name": self.name,
             "description": self.description,
@@ -60,17 +60,17 @@ class BaseTool(ABC):
 
 
 # ===========================================================================
-# 具体工具实现
+# Concrete tool implementations
 # ===========================================================================
 
 @dataclass
 class PythonFunctionTool(BaseTool):
-    """Python函数工具（直接调用）
+    """Python function tool with direct invocation.
 
-    示例：
+    Example:
         @tool("laplace_transform")
         def laplace_transform(expr: str) -> str:
-            '''计算拉普拉斯变换'''
+            '''Compute a Laplace transform.'''
             from sympy import laplace_transform, sympify
             expr = sympify(expr)
             result = laplace_transform(expr, t, s)
@@ -91,18 +91,18 @@ class PythonFunctionTool(BaseTool):
         return self._description
 
     def execute(self, *args, **kwargs) -> Any:
-        """直接调用Python函数"""
-        logger.info(f"执行工具 [{self.name}]: args={args}, kwargs={kwargs}")
+        """Call the wrapped Python function directly."""
+        logger.info(f"Executing tool [{self.name}]: args={args}, kwargs={kwargs}")
         try:
             result = self.func(*args, **kwargs)
-            logger.info(f"工具 [{self.name}] 执行成功: {result}")
+            logger.info(f"Tool [{self.name}] executed successfully: {result}")
             return result
         except Exception as e:
-            logger.error(f"工具 [{self.name}] 执行失败: {e}")
+            logger.error(f"Tool [{self.name}] execution failed: {e}")
             raise
 
     def to_schema(self) -> Dict[str, Any]:
-        """生成schema"""
+        """Generate the schema."""
         if self.parameters_schema:
             return {
                 "name": self.name,
@@ -110,18 +110,18 @@ class PythonFunctionTool(BaseTool):
                 "parameters": self.parameters_schema
             }
 
-        # 默认schema
+        # Default schema.
         return super().to_schema()
 
 
 @dataclass
 class HTTPTool(BaseTool):
-    """HTTP API工具（远程调用）
+    """HTTP API tool for remote requests.
 
-    示例：
+    Example:
         tool = HTTPTool(
             name="weather_api",
-            description="获取天气信息",
+            description="Fetch weather information",
             endpoint="https://api.weather.com/current",
             method="GET",
             headers={"Authorization": "Bearer xxx"},
@@ -146,8 +146,8 @@ class HTTPTool(BaseTool):
         return self._description
 
     def execute(self, **kwargs) -> Any:
-        """发送HTTP请求"""
-        logger.info(f"执行HTTP工具 [{self.name}]: endpoint={self.endpoint}, params={kwargs}")
+        """Send the HTTP request."""
+        logger.info(f"Executing HTTP tool [{self.name}]: endpoint={self.endpoint}, params={kwargs}")
 
         try:
             if self.method.upper() == "GET":
@@ -167,22 +167,22 @@ class HTTPTool(BaseTool):
 
             response.raise_for_status()
             result = response.json()
-            logger.info(f"HTTP工具 [{self.name}] 执行成功")
+            logger.info(f"HTTP tool [{self.name}] executed successfully")
             return result
 
         except Exception as e:
-            logger.error(f"HTTP工具 [{self.name}] 执行失败: {e}")
+            logger.error(f"HTTP tool [{self.name}] execution failed: {e}")
             raise
 
 
 @dataclass
 class MCPTool(BaseTool):
-    """MCP (Model Context Protocol) 工具
+    """MCP (Model Context Protocol) tool.
 
-    示例：
+    Example:
         tool = MCPTool(
             name="database_query",
-            description="查询数据库",
+            description="Query the database",
             mcp_server="localhost:5000",
             tool_name="query",
         )
@@ -205,11 +205,11 @@ class MCPTool(BaseTool):
         return self._description
 
     def execute(self, **kwargs) -> Any:
-        """通过MCP协议调用工具"""
-        logger.info(f"执行MCP工具 [{self.name}]: server={self.mcp_server}, params={kwargs}")
+        """Invoke the tool through the MCP protocol."""
+        logger.info(f"Executing MCP tool [{self.name}]: server={self.mcp_server}, params={kwargs}")
 
         try:
-            # MCP协议调用（简化示例）
+            # Simplified MCP protocol call example.
             payload = {
                 "tool": self.tool_name,
                 "parameters": kwargs
@@ -228,20 +228,20 @@ class MCPTool(BaseTool):
 
             response.raise_for_status()
             result = response.json()
-            logger.info(f"MCP工具 [{self.name}] 执行成功")
+            logger.info(f"MCP tool [{self.name}] executed successfully")
             return result
 
         except Exception as e:
-            logger.error(f"MCP工具 [{self.name}] 执行失败: {e}")
+            logger.error(f"MCP tool [{self.name}] execution failed: {e}")
             raise
 
 
 # ===========================================================================
-# 工具注册表
+# Tool registry
 # ===========================================================================
 
 class ToolRegistry:
-    """工具注册表 - 管理所有注册的工具"""
+    """Registry that manages all registered tools."""
 
     def __init__(self):
         self._tools: Dict[str, BaseTool] = {}
@@ -253,39 +253,39 @@ class ToolRegistry:
         description: Optional[str] = None,
         override: bool = False
     ):
-        """注册工具
+        """Register a tool.
 
-        参数:
-            name: 工具名称
-            tool: 工具实例
-            description: 工具描述（可选）
-            override: 是否覆盖已存在的工具
+        Parameters:
+            name: Tool name
+            tool: Tool instance
+            description: Optional tool description
+            override: Whether to overwrite an existing tool
         """
         if name in self._tools and not override:
-            raise ValueError(f"工具 '{name}' 已存在，使用 override=True 来覆盖")
+            raise ValueError(f"Tool '{name}' already exists; use override=True to replace it")
 
         self._tools[name] = tool
-        logger.info(f"✓ 注册工具: {name}")
+        logger.info(f"✓ Registered tool: {name}")
 
     def get(self, name: str) -> BaseTool:
-        """获取工具"""
+        """Get a registered tool."""
         if name not in self._tools:
-            raise KeyError(f"工具 '{name}' 未注册")
+            raise KeyError(f"Tool '{name}' is not registered")
         return self._tools[name]
 
     def list_tools(self) -> List[str]:
-        """列出所有工具"""
+        """List all registered tools."""
         return list(self._tools.keys())
 
     def execute(self, name: str, *args, **kwargs) -> Any:
-        """执行工具（便捷方法）"""
+        """Execute a tool by name."""
         tool = self.get(name)
         return tool.execute(*args, **kwargs)
 
     def load_from_config(self, config_path: Union[str, Path]):
-        """从配置文件加载工具
+        """Load tools from a configuration file.
 
-        配置文件格式：
+        Example configuration format:
         ```yaml
         tools:
           - name: weather
@@ -311,7 +311,7 @@ class ToolRegistry:
             self.register(tool_config['name'], tool)
 
     def _create_tool_from_config(self, config: Dict) -> BaseTool:
-        """根据配置创建工具"""
+        """Create a tool from a configuration dictionary."""
         tool_type = config.get('type', 'function')
 
         if tool_type == 'http':
@@ -331,15 +331,15 @@ class ToolRegistry:
                 auth_token=config.get('auth_token'),
             )
         else:
-            raise ValueError(f"不支持的工具类型: {tool_type}")
+            raise ValueError(f"Unsupported tool type: {tool_type}")
 
 
-# 全局工具注册表
+# Global tool registry
 tool_registry = ToolRegistry()
 
 
 # ===========================================================================
-# 装饰器 - 用户友好的注册方式
+# Decorator-based user-friendly registration
 # ===========================================================================
 
 def tool(
@@ -347,13 +347,13 @@ def tool(
     description: Optional[str] = None,
     schema: Optional[Dict] = None,
 ):
-    """装饰器：注册Python函数为工具
+    """Decorator that registers a Python function as a tool.
 
-    示例1：简单使用
+    Example 1: simple usage
         ```python
         @tool()
         def calculate_laplace(expr: str) -> str:
-            '''计算拉普拉斯变换'''
+            '''Compute a Laplace transform.'''
             from sympy import laplace_transform, symbols, sympify
             t, s = symbols('t s')
             expr = sympify(expr)
@@ -361,39 +361,39 @@ def tool(
             return str(result[0])
         ```
 
-    示例2：自定义名称和描述
+    Example 2: custom name and description
         ```python
-        @tool(name="math_laplace", description="计算数学表达式的拉普拉斯变换")
+        @tool(name="math_laplace", description="Compute the Laplace transform of a mathematical expression")
         def my_laplace_function(expr: str) -> str:
             ...
         ```
 
-    示例3：带schema
+    Example 3: with a schema
         ```python
         @tool(
             name="weather",
             schema={
                 "type": "object",
                 "properties": {
-                    "city": {"type": "string", "description": "城市名称"},
+                    "city": {"type": "string", "description": "City name"},
                     "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
                 },
                 "required": ["city"]
             }
         )
         def get_weather(city: str, unit: str = "celsius") -> dict:
-            '''获取天气信息'''
+            '''Fetch weather information.'''
             ...
         ```
     """
     def decorator(func: Callable):
-        # 工具名称
+        # Tool name.
         tool_name = name or func.__name__
 
-        # 工具描述
-        tool_desc = description or func.__doc__ or f"工具: {tool_name}"
+        # Tool description.
+        tool_desc = description or func.__doc__ or f"Tool: {tool_name}"
 
-        # 创建工具
+        # Create the tool instance.
         tool_instance = PythonFunctionTool(
             _name=tool_name,
             _description=tool_desc,
@@ -401,17 +401,17 @@ def tool(
             parameters_schema=schema,
         )
 
-        # 注册到全局注册表
+        # Register it in the global registry.
         tool_registry.register(tool_name, tool_instance)
 
-        # 返回原函数（保持可调用）
+        # Return the original function so it remains callable.
         return func
 
     return decorator
 
 
 # ===========================================================================
-# 便捷函数 - 快速创建工具
+# Convenience helpers for quick tool creation
 # ===========================================================================
 
 def create_http_tool(
@@ -421,14 +421,14 @@ def create_http_tool(
     method: str = "GET",
     headers: Optional[Dict] = None,
 ) -> HTTPTool:
-    """快速创建HTTP工具
+    """Create an HTTP tool quickly.
 
-    示例：
+    Example:
         ```python
         weather_tool = create_http_tool(
             name="weather",
             endpoint="https://api.weather.com/current",
-            description="获取天气信息",
+            description="Fetch weather information",
             headers={"Authorization": "Bearer xxx"}
         )
 
@@ -454,15 +454,15 @@ def create_mcp_tool(
     description: str = "",
     auth_token: Optional[str] = None,
 ) -> MCPTool:
-    """快速创建MCP工具
+    """Create an MCP tool quickly.
 
-    示例：
+    Example:
         ```python
         db_tool = create_mcp_tool(
             name="database",
             mcp_server="localhost:5000",
             tool_name="query",
-            description="查询数据库"
+            description="Query the database"
         )
 
         result = db_tool.execute(sql="SELECT * FROM users")
@@ -481,26 +481,26 @@ def create_mcp_tool(
 
 
 # ===========================================================================
-# 导出
+# Exports
 # ===========================================================================
 
 __all__ = [
-    # 基类
+    # Base class
     "BaseTool",
 
-    # 工具类型
+    # Tool types
     "PythonFunctionTool",
     "HTTPTool",
     "MCPTool",
 
-    # 注册表
+    # Registry
     "ToolRegistry",
     "tool_registry",
 
-    # 装饰器
+    # Decorator
     "tool",
 
-    # 便捷函数
+    # Convenience helpers
     "create_http_tool",
     "create_mcp_tool",
 ]

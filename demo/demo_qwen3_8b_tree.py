@@ -2,15 +2,15 @@
 """
 Qwen3-8B 树优化 Demo — 使用升级后的 APOEngine
 
-展示完整 Tree 功能:
-1. Auto-Split: 根据矛盾反馈自动拆分子 skill
-2. 多候选评分: 每轮生成 N 个候选并选最佳
+展示complete Tree 功能:
+1. Auto-Split: 根据矛盾Feedback自动拆分子 skill
+2. 多候选Score: 每轮生成 N 个候选并选最佳
 3. 并行 API 调用 + 重试
 4. 断点续跑 (ResumeState)
 5. 多轮迭代优化
 
 主模型: Qwen/Qwen3-8B (弱模型, 有优化空间)
-Judge模型: Qwen/Qwen2.5-72B-Instruct (强模型, 生成梯度+评分)
+Judge模型: Qwen/Qwen2.5-72B-Instruct (强模型, 生成梯度+Score)
 """
 
 import csv
@@ -86,7 +86,7 @@ def load_data() -> tuple:
 
     split = int(len(balanced) * 0.7)
     train, test = balanced[:split], balanced[split:]
-    logger.info(f"总计 {len(balanced)}, 训练={len(train)}, 测试={len(test)}")
+    logger.info(f"总计 {len(balanced)}, 训练={len(train)}, test={len(test)}")
     return train, test
 
 
@@ -175,7 +175,7 @@ def main():
     llm = LLMClient(config)
     engine = APOEngine(config, llm)
 
-    # ── 创建初始 skill 树 ──
+    # ── Create初始 skill 树 ──
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     root_skill = Skill(
         name="paper-classifier",
@@ -212,10 +212,10 @@ def main():
         t0 = time.time()
         traces = collect_traces(client, tree.root.skill.system_prompt, round_data)
         failures = [t for t in traces if t.feedback and t.feedback.score < 0.5]
-        logger.info(f"  收集: {len(failures)}/{len(traces)} 失败 ({time.time()-t0:.1f}s)")
+        logger.info(f"  收集: {len(failures)}/{len(traces)} failed ({time.time()-t0:.1f}s)")
 
         if not failures:
-            logger.info("  零失败, 跳过")
+            logger.info("  零failed, Skip")
             accuracy_history.append(accuracy_history[-1])
             continue
 
@@ -241,11 +241,11 @@ def main():
             tree.save()
             resume.clear()
         except KeyboardInterrupt:
-            logger.warning("中断! 进度已保存, 下次可继续")
+            logger.warning("中断! 进度已Save, 下次可Continue")
             return
         except Exception as e:
             logger.error(f"优化出错: {e}")
-            logger.info("进度已保存, 下次可继续")
+            logger.info("进度已Save, 下次可Continue")
             raise
 
         opt_time = time.time() - t0
@@ -264,13 +264,13 @@ def main():
             best_prompt = tree.root.skill.system_prompt
             logger.info(f"  ★ 新最佳: {best_acc:.1%}")
 
-        # 保存 checkpoint
+        # Save checkpoint
         ckpt_path = OUTPUT_DIR / f"round{round_num}"
         tree.save(ckpt_path)
 
     # ── 总结 ──
     logger.info(f"\n{'='*60}")
-    logger.info("最终结果")
+    logger.info("最终results")
     logger.info(f"{'='*60}")
 
     logger.info("\n准确率变化:")

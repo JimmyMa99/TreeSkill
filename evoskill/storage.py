@@ -43,17 +43,37 @@ class TraceStorage:
         with self._path.open("a", encoding="utf-8") as fh:
             fh.write(trace.model_dump_json() + "\n")
 
+    def upsert(self, trace: Trace) -> None:
+        """Persist *trace*, replacing an existing record with the same ID."""
+        traces = self.load_all()
+        replaced = False
+
+        for index, existing in enumerate(traces):
+            if existing.id == trace.id:
+                traces[index] = trace
+                replaced = True
+                break
+
+        if not replaced:
+            traces.append(trace)
+
+        self._write_all(traces)
+
     def load_all(self) -> List[Trace]:
-        """Read every trace from the JSONL file."""
+        """Read every trace from the JSONL file, deduplicated by trace ID."""
         if not self._path.exists():
             return []
-        traces: List[Trace] = []
+        traces_by_id: Dict[str, Trace] = {}
+        trace_order: List[str] = []
         with self._path.open("r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if line:
-                    traces.append(Trace.model_validate_json(line))
-        return traces
+                    trace = Trace.model_validate_json(line)
+                    if trace.id not in traces_by_id:
+                        trace_order.append(trace.id)
+                    traces_by_id[trace.id] = trace
+        return [traces_by_id[trace_id] for trace_id in trace_order]
 
     def get_feedback_samples(
         self,
@@ -115,6 +135,11 @@ class TraceStorage:
             })
 
         return pairs
+    
+    def _write_all(self, traces: List[Trace]) -> None:
+        with self._path.open("w", encoding="utf-8") as fh:
+            for trace in traces:
+                fh.write(trace.model_dump_json() + "\n")
 
     def export_dpo(
         self,

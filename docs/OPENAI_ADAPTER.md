@@ -129,16 +129,6 @@ adapter = OpenAIAdapter(
 )
 ```
 
-### 本地模型（llama.cpp server）
-
-```python
-adapter = OpenAIAdapter(
-    model="llama-3.1-70b",
-    base_url="http://localhost:8000/v1",
-    api_key="dummy",  # 本地模型可能不需要
-)
-```
-
 ---
 
 ## 高级功能
@@ -391,7 +381,7 @@ response = adapter.generate(prompt, max_tokens=100)
 ## 下一步
 
 - [ ] 实现 AnthropicAdapter（Claude API）
-- [ ] 实现 LocalAdapter（llama.cpp/vLLM）
+
 - [ ] 构建优化引擎
 - [ ] 集成到CLI
 

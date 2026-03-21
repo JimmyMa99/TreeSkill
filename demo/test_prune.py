@@ -1,8 +1,8 @@
 #!/usr/bin python3
 """
-简化版 Tree Demo - 测试剪枝功能
+简化版 Tree Demo - test剪枝功能
 
-不需要数据集，直接模拟测试
+不需要数据集，直接模拟test
 """
 
 import logging
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_mock_experiences(n=50):
-    """创建模拟经验数据"""
+    """Create模拟经验数据"""
     experiences = []
     categories = ['A', 'E', 'G', 'K', 'M']
 
@@ -49,7 +49,7 @@ def create_mock_experiences(n=50):
         if i < 30:
             exp.feedback = CompositeFeedback(critique="Good", score=0.9)
         else:
-            # 后 20 条是失败经验，显示需要拆分
+            # 后 20 条是failure experience，显示需要拆分
             exp.feedback = CompositeFeedback(
                 critique=f"Wrong category. Should be {categories[(i+1) % 5]}",
                 correction=categories[(i+1) % 5],
@@ -94,7 +94,7 @@ def optimize_round(adapter, tree, experiences, round_name, enable_prune=True):
 
     result = optimizer.optimize_tree(tree=tree, experiences=experiences)
 
-    logger.info(f"✅ 优化完成:")
+    logger.info(f"✅ Optimization complete:")
     logger.info(f"   节点优化: {result.nodes_optimized}")
     logger.info(f"   拆分次数: {result.splits_performed}")
     logger.info(f"   剪枝次数: {result.prunes_performed}")
@@ -111,24 +111,24 @@ def count_nodes(node):
 
 
 def main():
-    """主流程"""
+    """主Flow"""
     logger.info("\n" + "="*60)
-    logger.info("🌳 简化版 Tree 剪枝测试")
+    logger.info("🌳 简化版 Tree 剪枝test")
     logger.info("="*60)
 
-    # 创建适配器
+    # Create适配器
     api_key = os.getenv("EVO_LLM_API_KEY")
     base_url = os.getenv("EVO_LLM_BASE_URL", "https://api.siliconflow.cn/v1")
 
     judge_model = "Qwen/Qwen2.5-72B-Instruct"
 
     if not api_key:
-        logger.error("❌ 请设置 EVO_LLM_API_KEY")
+        logger.error("❌ 请Set EVO_LLM_API_KEY")
         return
 
     judge_adapter = OpenAIAdapter(model=judge_model, api_key=api_key, base_url=base_url)
 
-    # 创建初始skill树
+    # Create初始skill树
     poor_prompt = "Classify papers into categories. Return A, E, G, K, or M."
 
     root_skill = Skill(
@@ -189,9 +189,9 @@ def main():
     logger.info(f"   子节点数: {len(tree.root.children)}")
     logger.info(tree.list_tree())
 
-    # 保存
+    # Save
     tree.save(output_path)
-    logger.info(f"\n💾 已保存到: {output_path}")
+    logger.info(f"\n💾 已Save到: {output_path}")
 
     logger.info(f"\n✅ Demo完成!")
 

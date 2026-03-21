@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-验证脚本：测试 evoskill 包是否正确安装和导入
+Verification script for checking whether the evoskill package is installed
+and imported correctly.
 
-使用方法：
-1. 激活 conda 环境：conda activate pr
-2. 安装依赖：pip install -e .
-3. 运行验证：python tests/verify_rename.py
+Usage:
+1. Activate the conda environment: conda activate pr
+2. Install dependencies: pip install -e .
+3. Run verification: python tests/verify_rename.py
 """
 
 import sys
@@ -15,9 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 def test_core_imports():
-    """测试核心抽象层导入"""
+    """Test importing the core abstraction layer."""
     print("=" * 60)
-    print("测试 1: 核心抽象层导入")
+    print("Test 1: Core abstraction imports")
     print("=" * 60)
 
     try:
@@ -29,137 +30,137 @@ def test_core_imports():
             ConversationExperience,
             BaseModelAdapter,
         )
-        print("✅ 核心抽象层导入成功")
+        print("✅ Core abstraction imports succeeded")
 
-        # 测试创建对象
-        prompt = TextPrompt(content="测试提示词")
-        print(f"✅ 创建 TextPrompt: {prompt.content[:20]}...")
+        # Test object construction.
+        prompt = TextPrompt(content="Test prompt")
+        print(f"✅ Created TextPrompt: {prompt.content[:20]}...")
 
-        gradient = SimpleGradient(text="测试梯度")
-        print(f"✅ 创建 SimpleGradient: {gradient.text[:20]}...")
+        gradient = SimpleGradient(text="Test gradient")
+        print(f"✅ Created SimpleGradient: {gradient.text[:20]}...")
 
         return True
     except Exception as e:
-        print(f"❌ 核心导入失败:")
+        print(f"❌ Core import test failed:")
         traceback.print_exc()
         return False
 
 
 def test_registry():
-    """测试插件注册表"""
+    """Test the plugin registry."""
     print("\n" + "=" * 60)
-    print("测试 2: 插件注册表")
+    print("Test 2: Plugin registry")
     print("=" * 60)
 
     try:
         from evoskill import registry, adapter, hook, ComponentMeta
 
-        print("✅ Registry 导入成功")
-        print(f"   - 已注册适配器: {list(registry.list_adapters().keys())}")
-        print(f"   - 已注册优化器: {list(registry.list_optimizers().keys())}")
+        print("✅ Registry imported successfully")
+        print(f"   - Registered adapters: {list(registry.list_adapters().keys())}")
+        print(f"   - Registered optimizers: {list(registry.list_optimizers().keys())}")
 
-        # 测试装饰器
+        # Test decorators.
         @adapter("test-adapter")
         class TestAdapter:
             pass
 
-        print("✅ @adapter 装饰器工作正常")
+        print("✅ @adapter decorator works")
 
         @hook('after_optimize')
         def test_hook(old, new, gradient):
             pass
 
-        print("✅ @hook 装饰器工作正常")
+        print("✅ @hook decorator works")
 
         return True
     except Exception as e:
-        print(f"❌ Registry 测试失败:")
+        print(f"❌ Registry test failed:")
         traceback.print_exc()
         return False
 
 
 def test_adapter_imports():
-    """测试适配器导入（可能需要依赖）"""
+    """Test adapter imports, which may require optional dependencies."""
     print("\n" + "=" * 60)
-    print("测试 3: 适配器导入（需要 tiktoken 和 anthropic）")
+    print("Test 3: Adapter imports (requires tiktoken and anthropic)")
     print("=" * 60)
 
     try:
-        # 尝试导入适配器
+        # Try importing adapters.
         try:
             from evoskill import OpenAIAdapter
-            print("✅ OpenAIAdapter 导入成功")
+            print("✅ OpenAIAdapter imported successfully")
         except ImportError as e:
             if "tiktoken" in str(e):
-                print("⚠️  OpenAIAdapter 需要 tiktoken: pip install tiktoken")
+                print("⚠️  OpenAIAdapter requires tiktoken: pip install tiktoken")
             else:
                 raise
 
         try:
             from evoskill import AnthropicAdapter
-            print("✅ AnthropicAdapter 导入成功")
+            print("✅ AnthropicAdapter imported successfully")
         except ImportError as e:
             if "anthropic" in str(e):
-                print("⚠️  AnthropicAdapter 需要 anthropic: pip install anthropic")
+                print("⚠️  AnthropicAdapter requires anthropic: pip install anthropic")
             else:
                 raise
 
         return True
     except Exception as e:
-        print(f"❌ 适配器导入失败:")
+        print(f"❌ Adapter import test failed:")
         traceback.print_exc()
         return False
 
 
 def test_backward_compatibility():
-    """测试向后兼容（evo_framework 已移除，此测试验证 evoskill 直接导入）"""
+    """Test backward compatibility through direct evoskill imports."""
     print("\n" + "=" * 60)
-    print("测试 4: evoskill 直接导入")
+    print("Test 4: Direct evoskill import")
     print("=" * 60)
 
     try:
         from evoskill import TextPrompt, registry
 
-        print("✅ evoskill 导入成功")
+        print("✅ evoskill imported successfully")
 
-        prompt = TextPrompt(content="导入测试")
-        print(f"✅ 创建对象成功: {prompt.content[:20]}...")
+        prompt = TextPrompt(content="Import test")
+        print(f"✅ Object creation succeeded: {prompt.content[:20]}...")
 
         return True
     except Exception as e:
-        print(f"❌ 导入测试失败:")
+        print(f"❌ Direct import test failed:")
         traceback.print_exc()
         return False
 
 
 def test_package_info():
-    """测试包信息"""
+    """Test package metadata."""
     print("\n" + "=" * 60)
-    print("测试 5: 包信息")
+    print("Test 5: Package metadata")
     print("=" * 60)
 
     try:
         import evoskill
 
-        print(f"✅ 包名: {evoskill.__name__}")
-        print(f"✅ 版本: {evoskill.__version__}")
-        print(f"✅ 作者: {evoskill.__author__}")
+        print(f"✅ Package name: {evoskill.__name__}")
+        print(f"✅ Version: {evoskill.__version__}")
+        print(f"✅ Author: {evoskill.__author__}")
 
-        # 检查 __all__
-        print(f"✅ 导出符号数量: {len(evoskill.__all__)}")
-        print(f"   主要符号: {', '.join(evoskill.__all__[:10])}...")
+        # Check __all__.
+        print(f"✅ Exported symbol count: {len(evoskill.__all__)}")
+        print(f"   Main symbols: {', '.join(evoskill.__all__[:10])}...")
 
         return True
     except Exception as e:
-        print(f"❌ 包信息测试失败:")
+        print(f"❌ Package metadata test failed:")
         traceback.print_exc()
         return False
 
 
 def test_legacy_imports():
-    """测试遗留API导入"""
+    """Test legacy API imports."""
     print("\n" + "=" * 60)
-    print("测试 6: 遗留 API（v0.1）")
+    print("Test 6: Legacy API (v0.1)")
     print("=" * 60)
 
     try:
@@ -169,7 +170,7 @@ def test_legacy_imports():
 
             from evoskill import Skill, Trace, Message, SkillTree
 
-            print("✅ 遗留 API 导入成功")
+            print("✅ Legacy API imports succeeded")
             print("   - Skill")
             print("   - Trace")
             print("   - Message")
@@ -177,51 +178,51 @@ def test_legacy_imports():
 
         return True
     except Exception as e:
-        print(f"❌ 遗留 API 测试失败:")
+        print(f"❌ Legacy API test failed:")
         traceback.print_exc()
         return False
 
 
 def main():
     print("\n" + "🔍 " * 20)
-    print("evoskill 包验证脚本")
+    print("evoskill package verification script")
     print("🔍 " * 20 + "\n")
 
     results = []
 
-    # 运行所有测试
-    results.append(("核心导入", test_core_imports()))
-    results.append(("插件注册表", test_registry()))
-    results.append(("适配器导入", test_adapter_imports()))
-    results.append(("向后兼容", test_backward_compatibility()))
-    results.append(("包信息", test_package_info()))
-    results.append(("遗留API", test_legacy_imports()))
+    # Run all tests.
+    results.append(("Core imports", test_core_imports()))
+    results.append(("Plugin registry", test_registry()))
+    results.append(("Adapter imports", test_adapter_imports()))
+    results.append(("Backward compatibility", test_backward_compatibility()))
+    results.append(("Package metadata", test_package_info()))
+    results.append(("Legacy API", test_legacy_imports()))
 
-    # 汇总结果
+    # Summarize results.
     print("\n" + "=" * 60)
-    print("📊 测试结果汇总")
+    print("📊 Test summary")
     print("=" * 60)
 
     passed = sum(1 for _, result in results if result)
     total = len(results)
 
     for name, result in results:
-        status = "✅ 通过" if result else "❌ 失败"
+        status = "✅ PASS" if result else "❌ FAIL"
         print(f"{status} - {name}")
 
     print("\n" + "=" * 60)
-    print(f"总计: {passed}/{total} 测试通过")
+    print(f"Total: {passed}/{total} tests passed")
     print("=" * 60)
 
     if passed == total:
-        print("\n🎉 所有测试通过！evoskill 包已正确安装和配置。")
-        print("\n下一步:")
-        print("  1. 运行测试: pytest tests/test_*.py")
-        print("  2. 查看文档: cat docs/RENAME_COMPLETE.md")
-        print("  3. 开始使用: from evoskill import TextPrompt")
+        print("\n🎉 All tests passed! The evoskill package is installed and configured correctly.")
+        print("\nNext steps:")
+        print("  1. Run tests: pytest tests/test_*.py")
+        print("  2. View docs: cat docs/RENAME_COMPLETE.md")
+        print("  3. Start using it: from evoskill import TextPrompt")
         return 0
     else:
-        print("\n⚠️  部分测试失败，请检查依赖安装:")
+        print("\n⚠️  Some tests failed. Please check dependency installation:")
         print("  pip install -e .")
         return 1
 

@@ -1,7 +1,7 @@
 """
-工具注册系统 - 完整示例
+工具注册系统 - completeExample
 
-演示如何使用装饰器、HTTP、MCP等多种方式注册和使用自定义工具。
+演示如何使用装饰器、HTTP、MCP等多种Method注册和使用自定义工具。
 """
 
 import sys
@@ -18,7 +18,7 @@ from evoskill.tools import (
 
 
 # ===========================================================================
-# 示例 1: 使用装饰器注册Python函数（最简单）
+# Example 1: 使用装饰器注册Python函数（最简单）
 # ===========================================================================
 
 @tool()
@@ -29,7 +29,7 @@ def calculate_laplace(expr: str) -> str:
         expr: 数学表达式，如 "sin(t)", "exp(-t)"
 
     返回:
-        拉普拉斯变换结果
+        拉普拉斯变换results
     """
     try:
         from sympy import laplace_transform, symbols, sympify
@@ -83,11 +83,11 @@ def get_weather_mock(city: str, unit: str = "celsius") -> dict:
 
 
 # ===========================================================================
-# 示例 2: HTTP工具（远程API）
+# Example 2: HTTP工具（远程API）
 # ===========================================================================
 
 def example_http_tool():
-    """创建HTTP工具示例"""
+    """CreateHTTP工具Example"""
 
     # 方法1: 使用便捷函数
     weather_api = create_http_tool(
@@ -102,11 +102,11 @@ def example_http_tool():
 
 
 # ===========================================================================
-# 示例 3: MCP工具（Model Context Protocol）
+# Example 3: MCP工具（Model Context Protocol）
 # ===========================================================================
 
 def example_mcp_tool():
-    """创建MCP工具示例"""
+    """CreateMCP工具Example"""
 
     # 方法1: 使用便捷函数
     database_query = create_mcp_tool(
@@ -122,13 +122,13 @@ def example_mcp_tool():
 
 
 # ===========================================================================
-# 示例 4: 配置文件驱动
+# Example 4: Configfile驱动
 # ===========================================================================
 
 def example_config_driven():
-    """从配置文件加载工具"""
+    """从ConfigfileLoad工具"""
 
-    # 创建配置文件
+    # CreateConfigfile
     config_yaml = """
 tools:
   - name: weather
@@ -147,13 +147,13 @@ tools:
     auth_token: secret-token
 """
 
-    # 写入临时文件
+    # 写入临时file
     import tempfile
     with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
         f.write(config_yaml)
         config_path = f.name
 
-    # 加载
+    # Load
     # tool_registry.load_from_config(config_path)
 
     # 清理
@@ -162,11 +162,11 @@ tools:
 
 
 # ===========================================================================
-# 示例 5: 在优化器中使用工具
+# Example 5: 在优化器中使用工具
 # ===========================================================================
 
 def example_use_in_optimizer():
-    """在优化流程中使用工具"""
+    """在优化Flow中使用工具"""
 
     from evoskill.core import TextPrompt, ConversationExperience, CompositeFeedback
     from evoskill.core.experience import FeedbackType
@@ -177,13 +177,13 @@ def example_use_in_optimizer():
         version="v1.0"
     )
 
-    # 失败案例：助手没有正确计算拉普拉斯变换
+    # Failure case：助手没有正确计算拉普拉斯变换
     failure = ConversationExperience(
         messages=[{"role": "user", "content": "计算 sin(t) 的拉普拉斯变换"}],
         response="让我想想...应该是 1/(s^2+1)...",
         feedback=CompositeFeedback(
             feedback_type=FeedbackType.CORRECTION,
-            critique="计算结果不完整",
+            critique="计算results不complete",
             correction="正确答案是 1/(s^2+1)",
         )
     )
@@ -194,12 +194,12 @@ def example_use_in_optimizer():
 
 
 # ===========================================================================
-# 主函数 - 运行所有示例
+# 主函数 - Run所有Example
 # ===========================================================================
 
 def main():
     print("=" * 80)
-    print("工具注册系统示例")
+    print("工具注册系统Example")
     print("=" * 80)
 
     # 查看已注册的工具
@@ -235,14 +235,14 @@ def main():
     tool = tool_registry.get("weather_query")
     print(f"Schema: {tool.to_schema()}")
 
-    # 示例：HTTP和MCP
+    # Example：HTTP和MCP
     print("\n【其他工具类型】")
-    print("✓ HTTP工具: 使用 create_http_tool() 创建")
-    print("✓ MCP工具: 使用 create_mcp_tool() 创建")
-    print("✓ 配置文件: 使用 tool_registry.load_from_config() 加载")
+    print("✓ HTTP工具: 使用 create_http_tool() Create")
+    print("✓ MCP工具: 使用 create_mcp_tool() Create")
+    print("✓ Configfile: 使用 tool_registry.load_from_config() Load")
 
     print("\n" + "=" * 80)
-    print("✅ 示例运行完成!")
+    print("✅ ExampleRun完成!")
     print("=" * 80)
 
 

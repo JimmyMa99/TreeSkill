@@ -86,19 +86,19 @@ class APOConfig(BaseSettings):
     gradient_accumulation_steps: int = Field(default=5, ge=1)
     num_candidates: int = Field(
         default=2, ge=1,
-        description="每轮生成的候选 prompt 数量（beam_width=1 时使用）。",
+        description="Number of candidate prompts generated per round (used when beam_width=1).",
     )
     beam_width: int = Field(
         default=1, ge=1,
-        description="Beam search 宽度。保留 top-k 个 prompt 跨轮优化。1 = 单轨模式。",
+        description="Beam search width. Keep the top-k prompts across rounds. 1 = single-track mode.",
     )
     branch_factor: int = Field(
         default=2, ge=1,
-        description="每个 parent prompt 生成的候选数量。",
+        description="Number of candidates generated for each parent prompt.",
     )
     beam_rounds: int = Field(
         default=3, ge=1,
-        description="Beam search 轮数。每轮对 beam 中的每个 prompt 做一次梯度+编辑。",
+        description="Number of beam search rounds. Each round applies one gradient-and-edit step to every prompt in the beam.",
     )
 
 
@@ -112,27 +112,27 @@ class RewardConfig(BaseSettings):
 
     enabled: bool = Field(
         default=False,
-        description="启用自动 Judge 评分。关闭时只能手动反馈。",
+        description="Enable automatic Judge scoring. When disabled, only manual feedback is available.",
     )
     model: Optional[str] = Field(
         default=None,
-        description="Judge 模型。为空则回落到 llm.judge_model。",
+        description="Judge model. Falls back to llm.judge_model when empty.",
     )
     base_url: Optional[str] = Field(
         default=None,
-        description="Judge API 地址。为空则回落到 llm.base_url。",
+        description="Judge API base URL. Falls back to llm.base_url when empty.",
     )
     api_key: Optional[SecretStr] = Field(
         default=None,
-        description="Judge API 密钥。为空则回落到 llm.api_key。",
+        description="Judge API key. Falls back to llm.api_key when empty.",
     )
     auto_judge: bool = Field(
         default=False,
-        description="每次生成后自动运行 Judge 评分。",
+        description="Run Judge scoring automatically after each generation.",
     )
     default_rubric: Optional[str] = Field(
         default=None,
-        description="默认评分标准 prompt。Skill 级的 judge_rubric 会覆盖此值。",
+        description="Default scoring rubric prompt. A skill-level judge_rubric overrides this value.",
     )
 
 

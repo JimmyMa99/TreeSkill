@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Demo 1: 从零开始构建 — 创建一个全新的写作技能并通过对话+反馈进化它。
+"""Demo 1: Build from scratch — Create一个全新的写作技能并passed对话+Feedback进化它。
 
-使用方式:
+Usage:
     cd /Users/mzm/code/evo_agent
     conda activate pr
     python demo/demo_from_scratch.py
 
-每个步骤都支持交互：你可以自定义初始 prompt、修改反馈、设置 target 等。
+每个Step都支持交互：你可以自定义初始 prompt、修改Feedback、Set target 等。
 """
 
 import sys
@@ -36,18 +36,18 @@ def banner(text: str) -> None:
 
 
 # ==================================================================
-# Step 1: 创建极简 Skill
+# Step 1: Create a minimal Skill
 # ==================================================================
-banner("📝 Step 1: 从零创建一个极简写作 Skill")
+banner("📝 Step 1: 从零Create一个极简写作 Skill")
 
-default_prompt = "你是一个写作助手。"
-console.print(f"[dim]预设的初始 System Prompt:[/dim] {default_prompt}")
+default_prompt = "You are a writing assistant."
+console.print(f"[dim]Default initial System Prompt:[/dim] {default_prompt}")
 custom = Prompt.ask(
-    "输入你的初始 System Prompt (直接回车使用预设)",
+    "Enter your initial System Prompt (press Enter to use the default)",
     default=default_prompt,
 )
 
-skill_name = Prompt.ask("Skill 名称", default="scratch-writer")
+skill_name = Prompt.ask("Skill name", default="scratch-writer")
 
 scratch_skill = Skill(
     name=skill_name,
@@ -56,27 +56,27 @@ scratch_skill = Skill(
 
 scratch_path = Path(f"demo/{skill_name}.yaml")
 skill_module.save(scratch_skill, scratch_path)
-console.print(f"[green]✓[/green] 已创建极简 Skill → {scratch_path}")
+console.print(f"[green]✓[/green] 已Create a minimal Skill → {scratch_path}")
 console.print(f"[dim]System Prompt:[/dim] {scratch_skill.system_prompt}")
 
 # ==================================================================
-# Step 2: 用极简 Skill 生成内容
+# Step 2: 用极简 Skill 生成content
 # ==================================================================
-if Confirm.ask("\n继续生成内容测试?", default=True):
-    banner("💬 Step 2: 用极简 Skill 生成内容，观察效果")
+if Confirm.ask("\nContinue生成contenttest?", default=True):
+    banner("💬 Step 2: Generate content with the minimal Skill and inspect the result")
 
     llm = LLMClient(config)
     storage = TraceStorage(config.storage)
 
-    default_test = "帮我写一段关于春天的短文，100字左右"
-    test_prompt = Prompt.ask("输入测试 prompt", default=default_test)
+    default_test = "Write a short passage about spring for me，100字左右"
+    test_prompt = Prompt.ask("Enter a test prompt", default=default_test)
 
     user_msg = Message(role="user", content=test_prompt)
     messages = skill_module.compile_messages(scratch_skill, [user_msg])
 
     console.print(f"\n[bold green]User:[/bold green] {test_prompt}\n")
 
-    with console.status("[dim]生成中…[/dim]"):
+    with console.status("[dim]Generating…[/dim]"):
         response = llm.generate(messages)
 
     console.print(Panel(
@@ -89,20 +89,20 @@ if Confirm.ask("\n继续生成内容测试?", default=True):
     storage.append(trace1)
 
     # ==================================================================
-    # Step 3: 用户反馈
+    # Step 3: 用户Feedback
     # ==================================================================
-    banner("📋 Step 3: 对生成结果给出反馈")
+    banner("📋 Step 3: 对生成results给出Feedback")
 
-    console.print("[dim]你可以评分、给出批评、提供理想回复。[/dim]\n")
-    action = Prompt.ask("反馈操作", choices=["评分", "跳过"], default="评分")
+    console.print("[dim]你可以Score、给出Critique、提供Ideal reply。[/dim]\n")
+    action = Prompt.ask("Feedback action", choices=["Score", "Skip"], default="Score")
 
-    if action == "评分":
-        score = float(Prompt.ask("评分 (0.0-1.0)", default="0.2"))
+    if action == "Score":
+        score = float(Prompt.ask("Score (0.0-1.0)", default="0.2"))
         critique = Prompt.ask(
-            "批评/建议",
+            "Critique / suggestion",
             default="太像AI写的，缺乏真实感和个人色彩，读起来像模板",
         )
-        correction = Prompt.ask("理想回复 (直接回车跳过)", default="")
+        correction = Prompt.ask("Ideal reply (直接回车Skip)", default="")
 
         feedback = Feedback(
             score=max(0.0, min(1.0, score)),
@@ -111,16 +111,16 @@ if Confirm.ask("\n继续生成内容测试?", default=True):
         )
         trace1.feedback = feedback
         storage.append(trace1)
-        console.print(f"[green]✓ 反馈已记录 (score={feedback.score})[/green]")
+        console.print(f"[green]✓ Feedback已记录 (score={feedback.score})[/green]")
 
-    # 允许添加更多交互+反馈
-    while Confirm.ask("\n再做一轮对话+反馈?", default=False):
-        extra_prompt = Prompt.ask("输入新 prompt")
+    # 允许添加更多交互+Feedback
+    while Confirm.ask("\n再做一轮对话+Feedback?", default=False):
+        extra_prompt = Prompt.ask("Enter a new prompt")
         user_msg2 = Message(role="user", content=extra_prompt)
         messages2 = skill_module.compile_messages(scratch_skill, [user_msg2])
 
         console.print(f"\n[bold green]User:[/bold green] {extra_prompt}")
-        with console.status("[dim]生成中…[/dim]"):
+        with console.status("[dim]Generating…[/dim]"):
             resp2 = llm.generate(messages2)
 
         console.print(Panel(
@@ -132,36 +132,36 @@ if Confirm.ask("\n继续生成内容测试?", default=True):
         trace2 = Trace(inputs=[user_msg2], prediction=resp2)
         storage.append(trace2)
 
-        s = float(Prompt.ask("评分 (0.0-1.0)", default="0.3"))
-        c = Prompt.ask("批评/建议 (直接回车跳过)", default="")
+        s = float(Prompt.ask("Score (0.0-1.0)", default="0.3"))
+        c = Prompt.ask("Critique / suggestion (直接回车Skip)", default="")
         if c:
             trace2.feedback = Feedback(score=s, critique=c)
             storage.append(trace2)
-            console.print(f"[green]✓ 反馈已记录[/green]")
+            console.print(f"[green]✓ Feedback已记录[/green]")
 
     # ==================================================================
-    # Step 4: 设置优化方向
+    # Step 4: Set优化方向
     # ==================================================================
-    banner("🎯 Step 4: 设置优化方向")
+    banner("🎯 Step 4: Set优化方向")
 
-    default_target = "更像人，有生活气息，避免AI腔"
-    target = Prompt.ask("输入优化方向", default=default_target)
+    default_target = "sound more human, feel lived-in, and avoid AI-sounding phrasing"
+    target = Prompt.ask("Enter the optimization target", default=default_target)
     scratch_skill = scratch_skill.model_copy(update={"target": target})
     skill_module.save(scratch_skill, scratch_path)
-    console.print(f"[green]✓[/green] 优化方向已设置: [bold]{scratch_skill.target}[/bold]")
+    console.print(f"[green]✓[/green] Optimization target set: [bold]{scratch_skill.target}[/bold]")
 
     # ==================================================================
-    # Step 5: 运行 APO 优化
+    # Step 5: Run APO optimization
     # ==================================================================
-    if Confirm.ask("\n运行 APO 优化?", default=True):
-        banner("🧠 Step 5: 运行 APO 优化")
+    if Confirm.ask("\nRun APO optimization?", default=True):
+        banner("🧠 Step 5: Run APO optimization")
 
         engine = APOEngine(config, llm)
         traces = storage.get_feedback_samples()
-        console.print(f"[dim]找到 {len(traces)} 条反馈样本[/dim]")
+        console.print(f"[dim]找到 {len(traces)} 条Feedback样本[/dim]")
 
         if traces:
-            with console.status("[dim]APO 优化中…[/dim]"):
+            with console.status("[dim]APO optimization in progress…[/dim]"):
                 evolved_skill = engine.optimize(scratch_skill, traces)
 
             skill_module.save(evolved_skill, scratch_path)
@@ -185,12 +185,12 @@ if Confirm.ask("\n继续生成内容测试?", default=True):
             # Step 6: 对比
             # ==================================================================
             if Confirm.ask("\n用进化后的 Skill 重新生成做对比?", default=True):
-                banner("🔄 Step 6: A/B 对比")
+                banner("🔄 Step 6: A/B comparison")
 
                 messages_v2 = skill_module.compile_messages(evolved_skill, [user_msg])
                 console.print(f"[bold green]User:[/bold green] {test_prompt}\n")
 
-                with console.status("[dim]生成中…[/dim]"):
+                with console.status("[dim]Generating…[/dim]"):
                     response_v2 = llm.generate(messages_v2)
 
                 console.print(Panel(
@@ -204,8 +204,8 @@ if Confirm.ask("\n继续生成内容测试?", default=True):
                     border_style="bright_green",
                 ))
         else:
-            console.print("[yellow]没有反馈样本，跳过优化。[/yellow]")
+            console.print("[yellow]没有Feedback样本，Skip优化。[/yellow]")
 
-console.print("\n[bold]✨ Demo 完成！[/bold]")
-console.print(f"[dim]进化后的 skill 已保存到 {scratch_path}[/dim]")
-console.print(f"[dim]你可以继续用 CLI 与它交互：python -m evoskill.main --skill {scratch_path}[/dim]\n")
+console.print("\n[bold]✨ Demo complete![/bold]")
+console.print(f"[dim]The evolved skill has been saved to {scratch_path}[/dim]")
+console.print(f"[dim]你可以Continue用 CLI 与它交互：python -m evoskill.main --skill {scratch_path}[/dim]\n")

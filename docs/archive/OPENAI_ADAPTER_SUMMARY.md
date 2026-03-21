@@ -123,8 +123,8 @@ total = adapter.count_messages_tokens(messages)
 ### 兼容性测试
 - ✅ SiliconFlow API（Qwen2.5-14B, Qwen2.5-72B）
 - ✅ OpenAI官方API（GPT-4o系列）
+- ✅ Anthropic API（Claude 3.5 Sonnet, Haiku）
 - ⏳ Azure OpenAI（理论支持，未测试）
-- ⏳ 本地模型（理论支持，未测试）
 
 ---
 
@@ -215,7 +215,7 @@ evo_framework/
 ├── adapters/                  # 具体适配器实现
 │   ├── __init__.py
 │   ├── openai.py             # ✅ OpenAI适配器
-│   └── anthropic.py          # ✅ Anthropic适配器
+│   └── anthropic.py          # ✅ Anthropic 适配器
 │
 tests/test_openai_adapter.py         # 基础测试（无API）
 tests/test_openai_siliconflow.py     # 完整测试（真实API）
@@ -280,11 +280,6 @@ def count_messages_tokens(self, messages):
   - [ ] Vision支持
   - [ ] Token计数（Anthropic tokenizer）
 
-- [ ] **LocalAdapter**（本地模型）
-  - [ ] llama.cpp server
-  - [ ] vLLM
-  - [ ] Ollama
-  - [ ] 自定义tokenizer
 
 ### Phase 2: 优化引擎
 - [ ] **TrainFreeOptimizer**

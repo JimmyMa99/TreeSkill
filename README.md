@@ -107,6 +107,8 @@ python -m evoskill.main --annotate --dataset train.jsonl --skill my-skill --manu
 
 标注模式中，人工反馈是自然语言偏好信号，既作为 APO 梯度的输入，也可导出为 DPO 微调数据。
 
+CLI 中输入 `/` 时会弹出 slash 命令候选列表，输入命令前缀时会自动收窄候选，便于快速发现和选择可用命令。
+
 ## Skill 文件格式
 
 遵循 [Agent Skills 标准](https://agentskills.io/specification)，每个 Skill 是一个目录：
@@ -202,6 +204,7 @@ writing-skills/
 | `/target <方向>` | 设置优化方向 |
 | `/optimize` | 触发 APO 优化（支持断点续跑） |
 | `/image <路径>` | 附加图片（多模态） |
+| `/audio <路径>` | 附加音频（语音输入） |
 | `/save` | 保存当前 skill |
 | `/tree` | 显示技能树 |
 | `/select <路径>` | 切换子技能（如 `social.moments`） |

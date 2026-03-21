@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_dataset(csv_path: str, samples_per_category: int = 20):
-    """创建数据集"""
+    """Create数据集"""
     with open(csv_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         all_data = list(reader)
@@ -72,7 +72,7 @@ def create_dataset(csv_path: str, samples_per_category: int = 20):
 
     logger.info(f"✅ 总计: {len(balanced_data)} 条")
     logger.info(f"   训练集: {len(train_data)} 条")
-    logger.info(f"   测试集: {len(test_data)} 条")
+    logger.info(f"   test集: {len(test_data)} 条")
 
     return train_data, test_data
 
@@ -180,23 +180,23 @@ def optimize_round(adapter, tree, experiences, round_name):
 
     result = optimizer.optimize_tree(tree=tree, experiences=experiences)
 
-    logger.info(f"✅ 优化完成: 节点优化={result.nodes_optimized}")
+    logger.info(f"✅ Optimization complete: 节点优化={result.nodes_optimized}")
     return result.tree
 
 
 def main():
-    """主流程"""
+    """主Flow"""
     logger.info("\n" + "="*60)
     logger.info("🎯 Qwen3-8B 多轮优化 Demo")
     logger.info("="*60)
     logger.info("主模型: Qwen3-8B (弱模型，有更大优化空间)")
     logger.info("Judge模型: Qwen2.5-72B (强模型，生成高质量梯度)")
 
-    # 加载数据
+    # Load数据
     csv_path = "demo/data/intern_camp5.csv"
     train_data, test_data = create_dataset(csv_path, samples_per_category=20)
 
-    # 创建适配器
+    # Create适配器
     api_key = os.getenv("EVO_LLM_API_KEY")
     base_url = os.getenv("EVO_LLM_BASE_URL", "https://api.siliconflow.cn/v1")
 
@@ -205,17 +205,17 @@ def main():
     judge_model = "Qwen/Qwen2.5-72B-Instruct"
 
     if not api_key:
-        logger.error("❌ 请设置 EVO_LLM_API_KEY")
+        logger.error("❌ 请Set EVO_LLM_API_KEY")
         return
 
     main_adapter = OpenAIAdapter(model=main_model, api_key=api_key, base_url=base_url)
     judge_adapter = OpenAIAdapter(model=judge_model, api_key=api_key, base_url=base_url)
 
-    logger.info(f"\n✅ API适配器创建完成")
+    logger.info(f"\n✅ API适配器Create完成")
     logger.info(f"   主模型: {main_model}")
     logger.info(f"   Judge模型: {judge_model}")
 
-    # 创建初始skill树 - 使用很差的prompt
+    # Create初始skill树 - 使用很差的prompt
     poor_prompt = """Classify papers into categories. Return A, E, G, K, or M."""
 
     root_skill = Skill(
@@ -273,7 +273,7 @@ def main():
         # 评估
         test_accuracy = evaluate(main_adapter, tree.root.skill.system_prompt, test_data)
         improvement = (test_accuracy - accuracy_history[-1]) * 100
-        logger.info(f"\n📊 第{round_num}轮测试准确率: {test_accuracy*100:.1f}% ({improvement:+.1f}%)")
+        logger.info(f"\n📊 第{round_num}轮test准确率: {test_accuracy*100:.1f}% ({improvement:+.1f}%)")
 
         accuracy_history.append(test_accuracy)
 
@@ -284,7 +284,7 @@ def main():
 
     # 总结
     logger.info(f"\n{'='*60}")
-    logger.info(f"📊 Qwen3-8B 多轮优化完成")
+    logger.info(f"📊 Qwen3-8B 多轮Optimization complete")
     logger.info(f"{'='*60}")
 
     logger.info(f"\n📈 准确率变化:")
@@ -298,19 +298,19 @@ def main():
     total_improvement = (best_accuracy - initial_accuracy) * 100
     relative_improvement = (best_accuracy / initial_accuracy - 1) * 100 if initial_accuracy > 0 else 0
 
-    logger.info(f"\n✅ 最终结果:")
+    logger.info(f"\n✅ 最终results:")
     logger.info(f"   初始: {initial_accuracy*100:.1f}%")
     logger.info(f"   最终: {best_accuracy*100:.1f}%")
-    logger.info(f"   总提升: {total_improvement:+.1f}% (绝对)")
+    logger.info(f"   Total improvement: {total_improvement:+.1f}% (绝对)")
     logger.info(f"   相对提升: {relative_improvement:+.1f}%")
 
-    # 保存
+    # Save
     output_path = Path("demo/outputs/demo-qwen3-8b/")
     best_tree.save(output_path)
-    logger.info(f"\n💾 已保存到: {output_path}")
+    logger.info(f"\n💾 已Save到: {output_path}")
 
-    # 显示优化后的prompt
-    logger.info(f"\n📝 优化后的prompt:")
+    # 显示After optimization的prompt
+    logger.info(f"\n📝 After optimization的prompt:")
     logger.info(f"\n{tree.root.skill.system_prompt[:500]}...")
 
     logger.info(f"\n✅ Demo完成!")

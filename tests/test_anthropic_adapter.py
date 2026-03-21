@@ -43,7 +43,7 @@ def test_basic_generation():
 
     # Create prompt
     prompt = TextPrompt(
-        content="你是一个友好的助手，请用简洁的语言回答问题。",
+        content="You are a friendly assistant. Answer questions concisely.",
         name="test-assistant",
     )
     print(f"\n✓ Created prompt")
@@ -80,15 +80,15 @@ def test_with_context():
 
     adapter = create_claude_35_haiku()
     prompt = TextPrompt(
-        content="你是一个助手，请记住之前的对话内容。",
+        content="You are an assistant. Remember the earlier conversation.",
         name="context-test",
     )
 
     # Create conversation context
     experiences = [
         ConversationExperience(
-            messages=[{"role": "user", "content": "我叫李四"}],
-            response="你好，李四！很高兴认识你。",
+            messages=[{"role": "user", "content": "My name is Sam."}],
+            response="Hi, Sam! Nice to meet you.",
         ),
     ]
 
@@ -101,7 +101,7 @@ def test_with_context():
         print(f"✓ Response: {response}")
 
         # The model should remember the name
-        if "李四" in response:
+        if "Sam" in response:
             print("✓ Model correctly used context!")
         else:
             print("⚠️ Model may not have used context")
@@ -124,18 +124,18 @@ def test_gradient_computation():
 
     # Create prompt
     prompt = TextPrompt(
-        content="你是一个助手。",
+        content="You are an assistant.",
         name="simple-assistant",
-        target="更友好",
+        target="be friendlier",
     )
 
     # Create failure experience
     experience = ConversationExperience(
-        messages=[{"role": "user", "content": "你好"}],
-        response="你好。",
+        messages=[{"role": "user", "content": "Hello"}],
+        response="Hello.",
         feedback=CompositeFeedback(
             score=0.3,
-            critique="太冷淡，不够友好"
+            critique="Too cold and not friendly enough"
         ),
     )
 
@@ -144,7 +144,7 @@ def test_gradient_computation():
     # Compute gradient
     print(f"\n→ Computing gradient...")
     try:
-        gradient = adapter.compute_gradient(prompt, [experience], target="更友好")
+        gradient = adapter.compute_gradient(prompt, [experience], target="be friendlier")
         print(f"✓ Gradient computed:")
         print(f"  {str(gradient)[:200]}...")
 
@@ -170,15 +170,15 @@ def test_token_counting():
     adapter = AnthropicAdapter(model="claude-3-5-sonnet-20241022")
 
     # Test text token counting
-    text = "你好，这是一个测试文本。"
+    text = "Hello, this is a test string."
     tokens = adapter.count_tokens(TextPrompt(content=text))
     print(f"✓ Text: '{text}'")
     print(f"  Tokens (approx): {tokens}")
 
     # Test message token counting
     messages = [
-        {"role": "user", "content": "你好"},
-        {"role": "assistant", "content": "你好！有什么我可以帮助你的吗？"},
+        {"role": "user", "content": "Hello"},
+        {"role": "assistant", "content": "Hello! How can I help you?"},
     ]
     msg_tokens = adapter.count_messages_tokens(messages)
     print(f"\n✓ Messages: {len(messages)} messages")
@@ -219,7 +219,7 @@ def test_vision_capability():
 
     # Create multimodal prompt
     prompt = MultimodalPrompt(
-        text="分析这张图片",
+        text="Analyze this image",
         images=["example.jpg"],  # Placeholder
     )
 

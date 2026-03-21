@@ -294,45 +294,45 @@ class SkillTree:
         *,
         name: Optional[str] = None,
     ) -> SkillNode:
-        """将另一个 Skill / SkillNode / SkillTree 嫁接到本树的指定位置。
+        """Attach another Skill / SkillNode / SkillTree at a target location in this tree.
 
         Parameters
         ----------
         target_path : str
-            嫁接到哪个节点下面。空字符串表示根节点。
+            Path of the parent node. An empty string refers to the root node.
         source : SkillTree | SkillNode | Skill
-            要嫁接的来源:
-            - ``SkillTree`` — 把整棵子树接过来（根节点变成子节点）
-            - ``SkillNode`` — 把节点（含子节点）接过来
-            - ``Skill``     — 创建一个叶节点
+            Source to attach:
+            - ``SkillTree`` — attach the full subtree (its root becomes a child)
+            - ``SkillNode`` — attach the node, including its descendants
+            - ``Skill``     — create a new leaf node
         name : str | None
-            嫁接后的节点名。默认取 source 自身的 name。
+            Name of the attached node. Defaults to ``source.name``.
 
         Returns
         -------
         SkillNode
-            新嫁接的节点。
+            The newly attached node.
 
         Raises
         ------
         ValueError
-            如果目标位置已存在同名子节点。
+            If the target location already contains a child with the same name.
 
         Examples
         --------
-        嫁接一个独立的 skill::
+        Attach an independent skill::
 
             external = load_skill("./another-skill")
             tree.graft("social", external)
-            # → social 下面多了一个子节点
+            # → social now has one more child node
 
-        嫁接整棵子树::
+        Attach an entire subtree::
 
             other_tree = SkillTree.load("./other-skills")
             tree.graft("business", other_tree)
-            # → business 下面多了 other_tree 的全部节点
+            # → business now includes all nodes from other_tree
 
-        跨树嫁接某个分支::
+        Attach a branch from another tree::
 
             node = other_tree.get("email")
             tree.graft("business", node, name="imported-email")
@@ -351,11 +351,11 @@ class SkillTree:
 
         if graft_name in parent.children:
             raise ValueError(
-                f"'{graft_name}' 已存在于 '{parent.name}' 下。"
-                f"请用 name= 参数指定不同名称，或先 prune 已有节点。"
+                f"'{graft_name}' already exists under '{parent.name}'. "
+                f"Use name= to specify a different name, or prune the existing node first."
             )
 
-        # Deep copy: 重建节点避免共享引用
+        # Rebuild the node tree to avoid shared references across trees.
         copied = _deep_copy_node(graft_node, new_name=graft_name)
         parent.children[graft_name] = copied
 
@@ -373,26 +373,26 @@ class SkillTree:
     # ------------------------------------------------------------------
 
     def collect_tools(self, dotpath: str = "") -> List:
-        """收集指定节点的完整工具列表（含祖先继承）。
+        """Collect the full tool list for a node, including inherited tools.
 
-        工具继承规则:
-        - 子节点继承父节点的所有工具声明
-        - 子节点自己的工具声明优先（同名覆盖）
-        - script.py 中的函数也作为工具来源
+        Tool inheritance rules:
+        - Child nodes inherit all tool declarations from their ancestors
+        - Child-level tool declarations take precedence over inherited ones
+        - Functions in script.py also count as a tool source
 
         Parameters
         ----------
         dotpath : str
-            节点路径。空字符串表示根节点。
+            Dot path of the node. An empty string refers to the root node.
 
         Returns
         -------
         List[ToolRef]
-            合并后的工具声明列表（去重，子覆盖父）。
+            Merged tool declarations, deduplicated with children overriding parents.
         """
         from evoskill.schema import ToolRef
 
-        # 收集从根到目标节点的路径
+        # Build the chain from the root to the target node.
         parts = [p for p in dotpath.split(".") if p]
         chain: List[SkillNode] = [self.root]
         node = self.root
@@ -400,7 +400,7 @@ class SkillTree:
             node = node.children[p]
             chain.append(node)
 
-        # 从根到叶合并工具，后面的覆盖前面的
+        # Merge tools from root to leaf so later nodes override earlier ones.
         merged: Dict[str, "ToolRef"] = {}
         for n in chain:
             for tool_ref in n.skill.tools:
@@ -417,15 +417,15 @@ def _deep_copy_node(
     node: SkillNode,
     new_name: Optional[str] = None,
 ) -> SkillNode:
-    """深拷贝一个 SkillNode（含所有子节点），避免树间共享引用。"""
+    """Deep-copy a SkillNode, including all descendants, to avoid shared references."""
     copied = SkillNode(
         name=new_name or node.name,
         skill=node.skill.model_copy(
             update={"name": new_name} if new_name else {},
         ),
-        path=None,  # 嫁接后的节点需要重新保存，path 由 save 决定
+        path=None,  # Attached nodes need to be saved again; save() determines the path.
         age=node.age,
-        usage_count=0,  # 嫁接后重置使用计数
+        usage_count=0,  # Reset usage count after attaching.
         collapsed=node.collapsed,
     )
     for child_name, child_node in node.children.items():
@@ -485,31 +485,31 @@ def resolve_skill_tools(
     skill: Skill,
     skill_dir: Optional[Path] = None,
 ) -> Dict[str, "BaseTool"]:
-    """将 Skill 的工具声明 + script.py 解析为可执行的 BaseTool 字典。
+    """Resolve Skill tool declarations + script.py into executable BaseTool instances.
 
-    工具来源（按优先级从低到高）:
-    1. ``skill.tools`` 中的 ToolRef 声明（http / mcp）
-    2. ``script.py`` 中的公开函数（如果 skill_dir 指定）
+    Tool sources, ordered from lower to higher precedence:
+    1. ToolRef declarations in ``skill.tools`` (http / mcp)
+    2. Public functions from ``script.py`` (when ``skill_dir`` is provided)
 
-    script.py 中的同名函数会覆盖 ToolRef 声明。
+    Functions in script.py override ToolRef declarations with the same name.
 
-    Parameters
-    ----------
-    skill : Skill
-        技能对象。
-    skill_dir : Path | None
-        技能目录路径（用于加载 script.py）。
+        Parameters
+        ----------
+        skill : Skill
+            Skill object.
+        skill_dir : Path | None
+            Skill directory path, used to load script.py.
 
-    Returns
-    -------
-    Dict[str, BaseTool]
-        工具名 → 可执行工具。
+        Returns
+        -------
+        Dict[str, BaseTool]
+            Mapping of tool names to executable tools.
     """
     from evoskill.tools import BaseTool, HTTPTool, MCPTool
 
     tools: Dict[str, BaseTool] = {}
 
-    # 1. 从 ToolRef 声明创建工具
+    # 1. Build tools from ToolRef declarations.
     for ref in skill.tools:
         if ref.type == "http" and ref.endpoint:
             tools[ref.name] = HTTPTool(
@@ -528,14 +528,14 @@ def resolve_skill_tools(
                 auth_token=ref.auth_token,
             )
 
-    # 2. 从 script.py 加载（覆盖同名）
+    # 2. Load tools from script.py, overriding name collisions.
     if skill_dir:
         try:
             from evoskill.script import load_script_as_tools
             script_tools = load_script_as_tools(skill_dir)
             tools.update(script_tools)
         except (ValueError, Exception) as exc:
-            logger.warning("加载 script.py 工具失败: %s", exc)
+            logger.warning("Failed to load tools from script.py: %s", exc)
 
     return tools
 

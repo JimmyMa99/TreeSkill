@@ -1,110 +1,110 @@
 # ============================================================
-# Evo-Framework 完整配置模版
+# Complete Evo-Framework configuration template
 # ============================================================
 #
-# 使用方式:
+# Usage:
 #   python -m evoskill.main --config demo/example/config.yaml --skill demo/example
 #
-# 优先级: 环境变量 > .env 文件 > 本 YAML > Pydantic 默认值
-# 即: 本文件写了 model: gpt-4o，但环境变量 EVO_LLM_MODEL=xxx 会覆盖它
+# Priority: environment variables > .env file > this YAML > Pydantic defaults
+# Example: if this file sets model: gpt-4o but EVO_LLM_MODEL=xxx is set, the env var wins
 #
-# 所有字段都有默认值，只需要填你想改的。
+# Every field has a default value, so only change what you need.
 # ============================================================
 
 
 # ─────────────────────────────────────────────
-# LLM 连接配置
+# LLM connection settings
 # ─────────────────────────────────────────────
 llm:
-  # API 密钥（必填，否则无法调用）
+  # API key (required, otherwise requests cannot be made)
   api_key: "your-api-key-here"
 
-  # API 地址（OpenAI 兼容格式）
-  # 常见选项:
+  # API base URL (OpenAI-compatible format)
+  # Common options:
   #   OpenAI:       https://api.openai.com/v1
   #   SiliconFlow:  https://api.siliconflow.cn/v1
-  #   本地 Ollama:  http://localhost:11434/v1
+  #   Local Ollama: http://localhost:11434/v1
   base_url: "https://api.siliconflow.cn/v1"
 
-  # 聊天模型 — 用于日常对话生成
+  # Chat model used for normal generation
   model: "Qwen/Qwen2.5-14B-Instruct"
 
-  # Judge 模型 — 用于 APO 梯度分析和 prompt 重写
-  # 建议用能力较强的模型，可以和 model 相同
+  # Judge model used for APO gradient analysis and prompt rewrites
+  # A stronger model is recommended; it may be the same as model
   judge_model: "Qwen/Qwen2.5-14B-Instruct"
 
-  # 生成温度 (0.0 ~ 2.0)
-  # 越低越确定性，越高越随机
+  # Generation temperature (0.0 ~ 2.0)
+  # Lower is more deterministic, higher is more random
   temperature: 0.7
 
 
 # ─────────────────────────────────────────────
-# 存储配置
+# Storage settings
 # ─────────────────────────────────────────────
 storage:
-  # 交互历史 (Trace) 存储路径
-  # 每次对话会追加写入此 JSONL 文件
+  # Storage path for interaction history (Trace)
+  # Each conversation appends a record to this JSONL file
   trace_path: "./data/traces.jsonl"
 
-  # Skill 文件默认搜索路径
-  # 当 --skill 传入名称而非路径时，会在此目录下查找
+  # Default search path for Skill files
+  # When --skill is a name instead of a path, this directory is searched
   skill_path: "./skills"
 
 
 # ─────────────────────────────────────────────
-# APO 优化参数
+# APO optimization parameters
 # ─────────────────────────────────────────────
 apo:
-  # 最大优化步数（预留，目前单步）
+  # Maximum optimization steps (reserved; currently single-step)
   max_steps: 3
 
-  # 每次优化使用的反馈样本数
-  # 越大越稳定，但 API 调用也越多
+  # Number of feedback samples used in each optimization
+  # Larger values are more stable but require more API calls
   gradient_accumulation_steps: 5
 
 
 # ─────────────────────────────────────────────
-# Reward / 自动 Judge 配置
+# Reward / automatic Judge settings
 # ─────────────────────────────────────────────
 reward:
-  # 是否启用自动 Judge 功能
-  # false = 只能通过 /bad、/rewrite 手动反馈
-  # true  = 启用 /judge 命令 + auto_judge 选项
+  # Whether to enable the automatic Judge
+  # false = feedback only through /bad and /rewrite
+  # true  = enables /judge and the auto_judge option
   enabled: false
 
-  # 每次生成后是否自动运行 Judge 评分
-  # 建议先手动调教好 rubric 后再开启，否则浪费 API
+  # Whether to run Judge scoring automatically after each generation
+  # Tune the rubric manually first to avoid wasting API calls
   auto_judge: false
 
-  # Judge 专用模型（留空 = 用 llm.judge_model）
-  # 如果想用不同模型做评分，在这里配
+  # Dedicated Judge model (empty = use llm.judge_model)
+  # Set this if you want to score with a different model
   model: null
 
-  # Judge 专用 API 地址（留空 = 用 llm.base_url）
+  # Dedicated Judge API base URL (empty = use llm.base_url)
   base_url: null
 
-  # Judge 专用 API 密钥（留空 = 用 llm.api_key）
+  # Dedicated Judge API key (empty = use llm.api_key)
   api_key: null
 
-  # 默认评分标准 prompt
-  # Skill 级别的 config.judge_rubric 会覆盖此值
-  # 留空 = 使用框架内置的通用评分逻辑
+  # Default scoring rubric prompt
+  # A skill-level config.judge_rubric overrides this value
+  # Leave empty to use the framework's built-in generic scoring logic
   default_rubric: |
-    你是一个写作质量评审专家。请根据以下维度对 Agent 的回复打分（0-1 分），并给出具体分析：
+    You are an expert evaluator of writing quality. Score the agent's reply from 0 to 1 along the following dimensions and provide a concrete analysis:
 
-    1. 自然度 (0.3 权重)：是否像真人写的，有没有 AI 腔
-    2. 准确性 (0.3 权重)：是否切题，有没有跑偏
-    3. 风格 (0.2 权重)：语言风格是否符合场景
-    4. 实用性 (0.2 权重)：用户能否直接使用
+    1. Naturalness (weight 0.3): does it sound human, or does it sound AI-generated?
+    2. Accuracy (weight 0.3): does it address the request without drifting off-topic?
+    3. Style (weight 0.2): does the writing style fit the scenario?
+    4. Practicality (weight 0.2): can the user use it directly?
 
-    输出格式：
-    分数: <0-1的小数>
-    分析: <具体分析>
+    Output format:
+    Score: <decimal between 0 and 1>
+    Analysis: <specific analysis>
 
 
 # ─────────────────────────────────────────────
-# 全局选项
+# Global options
 # ─────────────────────────────────────────────
 
-# 调试模式（打印详细日志）
+# Debug mode (prints verbose logs)
 verbose: false

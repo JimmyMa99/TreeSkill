@@ -1,6 +1,6 @@
-"""全自动化优化示例 - 无需人工干预
+"""Fully automated optimization example - no manual intervention required
 
-这个示例演示如何实现完全自动化的提示词优化循环。
+这个Example演示如何实现完全自动化的提示词优化循环。
 """
 
 import sys
@@ -30,30 +30,30 @@ from evoskill.tools import tool, tool_registry
     schema={
         "type": "object",
         "properties": {
-            "user_input": {"type": "string", "description": "用户输入"},
-            "agent_response": {"type": "string", "description": "助手回复"},
+            "user_input": {"type": "string", "description": "User input"},
+            "agent_response": {"type": "string", "description": "Assistant reply"},
             "criteria": {"type": "string", "description": "评估标准"}
         },
         "required": ["user_input", "agent_response", "criteria"]
     }
 )
 def evaluate_response(user_input: str, agent_response: str, criteria: str) -> dict:
-    """自动评估助手回复质量
+    """自动评估Assistant reply质量
 
     使用LLM作为Judge来评估回复是否符合标准
     """
     # 这里可以使用另一个LLM作为Judge
-    # 简化示例：基于规则的评估
+    # 简化Example：基于规则的评估
     score = 0.5
     critique = None
 
-    # 检查长度
+    # 检查length
     if len(agent_response) > 500:
         score -= 0.2
         critique = "回复过长"
 
-    # 检查是否包含示例
-    if "例如" in agent_response or "示例" in agent_response:
+    # 检查是否包含Example
+    if "例如" in agent_response or "Example" in agent_response:
         score += 0.1
 
     # 检查是否回答了问题
@@ -68,19 +68,19 @@ def evaluate_response(user_input: str, agent_response: str, criteria: str) -> di
 
 
 # ===========================================================================
-# Step 2: 定义测试用例生成器
+# Step 2: 定义Test case生成器
 # ===========================================================================
 
 def generate_test_cases() -> list:
-    """自动生成测试用例"""
+    """自动生成Test case"""
     return [
         {
-            "user_input": "什么是Python？",
-            "expected_criteria": "简洁、有结构、有示例"
+            "user_input": "What is Python?",
+            "expected_criteria": "简洁、有结构、有Example"
         },
         {
-            "user_input": "如何排序列表？",
-            "expected_criteria": "直接回答、提供代码示例"
+            "user_input": "How do I sort a list?",
+            "expected_criteria": "直接回答、提供代码Example"
         },
         {
             "user_input": "解释机器学习",
@@ -90,7 +90,7 @@ def generate_test_cases() -> list:
 
 
 # ===========================================================================
-# Step 3: 自动收集失败案例
+# Step 3: 自动收集Failure case
 # ===========================================================================
 
 def collect_failures_automatically(
@@ -99,11 +99,11 @@ def collect_failures_automatically(
     test_cases,
     threshold=0.5
 ) -> list:
-    """自动运行测试用例并收集失败案例"""
+    """自动RunTest case并收集Failure case"""
     failures = []
 
     for i, test in enumerate(test_cases):
-        print(f"\n测试用例 {i+1}/{len(test_cases)}: {test['user_input'][:30]}...")
+        print(f"\nTest case {i+1}/{len(test_cases)}: {test['user_input'][:30]}...")
 
         # 生成回复
         exp = ConversationExperience(
@@ -119,7 +119,7 @@ def collect_failures_automatically(
             criteria=test["expected_criteria"]
         )
 
-        # 如果不合格，添加到失败案例
+        # 如果不合格，添加到Failure case
         if eval_result["score"] < threshold:
             feedback = CompositeFeedback(
                 feedback_type=FeedbackType.CRITIQUE,
@@ -128,9 +128,9 @@ def collect_failures_automatically(
             )
             exp.feedback = feedback
             failures.append(exp)
-            print(f"  ❌ 失败 (得分: {eval_result['score']:.2f}): {eval_result['critique']}")
+            print(f"  ❌ failed (score: {eval_result['score']:.2f}): {eval_result['critique']}")
         else:
-            print(f"  ✓ 通过 (得分: {eval_result['score']:.2f})")
+            print(f"  ✓ passed (score: {eval_result['score']:.2f})")
 
     return failures
 
@@ -147,7 +147,7 @@ def auto_optimize_loop(
 ):
     """完全自动化的优化循环 - 无需人工干预"""
     print("="*80)
-    print("🤖 开始全自动化优化循环")
+    print("🤖 Starting the fully automated optimization loop")
     print("="*80)
 
     current_prompt = initial_prompt
@@ -158,16 +158,16 @@ def auto_optimize_loop(
         print(f"迭代 {iteration + 1}/{max_iterations}")
         print(f"{'='*80}")
 
-        # 1. 自动收集失败案例
+        # 1. 自动收集Failure case
         failures = collect_failures_automatically(adapter, current_prompt, test_cases)
 
         if not failures:
-            print(f"\n✅ 所有测试通过！优化完成。")
+            print(f"\n✅ 所有testpassed！Optimization complete。")
             break
 
-        print(f"\n发现 {len(failures)} 个失败案例，开始优化...")
+        print(f"\n发现 {len(failures)} 个Failure case，开始优化...")
 
-        # 2. 运行优化
+        # 2. Run优化
         config = OptimizerConfig(
             max_steps=2,
             conservative=False,
@@ -180,26 +180,26 @@ def auto_optimize_loop(
         # 3. 更新提示词
         current_prompt = result.optimized_prompt
 
-        print(f"\n优化完成:")
-        print(f"  版本: {initial_prompt.version} → {current_prompt.version}")
-        print(f"  步数: {result.steps_taken}")
+        print(f"\nOptimization complete:")
+        print(f"  Version: {initial_prompt.version} → {current_prompt.version}")
+        print(f"  Steps: {result.steps_taken}")
 
         # 4. 可选：再次验证
-        print(f"\n验证优化后的提示词...")
+        print(f"\n验证After optimization的提示词...")
         new_failures = collect_failures_automatically(adapter, current_prompt, test_cases)
 
         success_rate = 1 - (len(new_failures) / len(test_cases))
         print(f"\n成功率: {success_rate:.1%}")
 
         if success_rate >= convergence_threshold:
-            print(f"\n✅ 达到收敛阈值 ({convergence_threshold:.1%})，优化完成！")
+            print(f"\n✅ 达到Converged阈值 ({convergence_threshold:.1%})，Optimization complete！")
             break
 
     print(f"\n{'='*80}")
-    print("🎉 全自动化优化完成")
+    print("🎉 全自动化Optimization complete")
     print(f"{'='*80}")
-    print(f"最终版本: {current_prompt.version}")
-    print(f"最终提示词:\n{current_prompt.content[:200]}...")
+    print(f"Final version: {current_prompt.version}")
+    print(f"Final prompt:\n{current_prompt.content[:200]}...")
 
     return current_prompt
 
@@ -209,16 +209,16 @@ def auto_optimize_loop(
 # ===========================================================================
 
 def main():
-    """运行全自动化优化示例"""
+    """Run全自动化优化Example"""
 
     # 初始化
     adapter = OpenAIAdapter(model="gpt-4o-mini")
     initial_prompt = TextPrompt(
-        content="你是一个有用的助手。",
+        content="You are a helpful assistant.",
         version="v1.0"
     )
 
-    # 运行完全自动化的优化
+    # Run完全自动化的优化
     optimized_prompt = auto_optimize_loop(
         adapter=adapter,
         initial_prompt=initial_prompt,
@@ -226,8 +226,8 @@ def main():
         convergence_threshold=0.8
     )
 
-    # 保存结果
-    print(f"\n最终优化后的提示词:")
+    # Saveresults
+    print(f"\n最终After optimization的提示词:")
     print("="*80)
     print(optimized_prompt.content)
     print("="*80)

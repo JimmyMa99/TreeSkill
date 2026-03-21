@@ -181,13 +181,13 @@ class ResumeState:
     def summary(self) -> str:
         """Human-readable summary for CLI display."""
         lines = [
-            f"未完成的优化任务 (started: {self.started_at})",
-            f"  轮次: {self.round_num}/{self.total_rounds}",
-            f"  已完成节点: {len(self.completed_nodes)}",
+            f"Unfinished optimization run (started: {self.started_at})",
+            f"  Round: {self.round_num}/{self.total_rounds}",
+            f"  Completed nodes: {len(self.completed_nodes)}",
         ]
         if self.completed_nodes:
             for node in sorted(self.completed_nodes):
                 lines.append(f"    ✓ {node}")
         if self.split_nodes:
-            lines.append(f"  已拆分节点: {len(self.split_nodes)}")
+            lines.append(f"  Split nodes: {len(self.split_nodes)}")
         return "\n".join(lines)

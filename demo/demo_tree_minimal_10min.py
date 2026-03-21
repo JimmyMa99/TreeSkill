@@ -3,7 +3,7 @@
 10 分钟最小化树优化 Demo — 论文分类
 
 用一个较弱的 baseline prompt（有类别名但缺关键词提示），3 类、少量数据、2 轮优化。
-预期: baseline ~50-60% → 优化后 ~70%+，并触发 auto-split 产生子节点。
+预期: baseline ~50-60% → After optimization ~70%+，并触发 auto-split 产生子节点。
 
 用法:
     conda activate pr
@@ -175,7 +175,7 @@ def main():
     llm = LLMClient(config)
     engine = APOEngine(config, llm)
 
-    # 创建初始 skill 树
+    # Create初始 skill 树
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     root_skill = Skill(
         name="paper-classifier",
@@ -205,7 +205,7 @@ def main():
         logger.info(f"  traces: {len(failures)}/{len(traces)} failures ({time.time()-t0:.1f}s)")
 
         if not failures:
-            logger.info("  零失败, 跳过")
+            logger.info("  零failed, Skip")
             continue
 
         resume = ResumeState.create(
@@ -221,7 +221,7 @@ def main():
             tree.save()
             resume.clear()
         except KeyboardInterrupt:
-            logger.warning("中断! 进度已保存")
+            logger.warning("中断! 进度已Save")
             return
 
         logger.info(f"  优化耗时: {time.time()-t0:.1f}s")

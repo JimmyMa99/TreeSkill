@@ -168,32 +168,13 @@ response = adapter.generate(prompt)
 ### 自定义插件
 
 ```python
-from evoskill import adapter, hook, BaseModelAdapter
+from evoskill import adapter, hook
 
-# 1. 自定义适配器
-@adapter("local-llama", set_default=True)
-class LocalLlamaAdapter(BaseModelAdapter):
-    def __init__(self, model_path: str, **kwargs):
-        super().__init__(model_name="llama-local")
-        from llama_cpp import Llama
-        self.llm = Llama(model_path=model_path)
-
-    def generate(self, prompt, context=None, **kwargs):
-        text = prompt.to_model_input()
-        output = self.llm(text, max_tokens=100)
-        return output['choices'][0]['text']
-
-    def _count_tokens_impl(self, text: str) -> int:
-        return len(text.split())
-
-# 2. 注册钩子
+# 自定义钩子
 @hook('after_optimize')
 def log_to_wandb(old_skill, new_skill, gradient):
     import wandb
     wandb.log({'version': new_skill.version})
-
-# 使用
-adapter = registry.get_adapter("local-llama", model_path="/models/llama.gguf")
 ```
 
 ### 配置文件驱动

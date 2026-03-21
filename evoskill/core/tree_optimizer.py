@@ -1143,11 +1143,11 @@ class TreeAwareOptimizer:
 
     def _extract_prompt_text(self, prompt: OptimizablePrompt) -> str:
         """Extract text from an OptimizablePrompt."""
-        # 处理字符串情况
+        # Handle plain string values.
         if isinstance(prompt, str):
             return prompt
 
-        # 处理对象情况
+        # Handle object-like values.
         if hasattr(prompt, "content"):
             return prompt.content
         elif hasattr(prompt, "text"):
@@ -1159,7 +1159,7 @@ class TreeAwareOptimizer:
         elif hasattr(prompt, "to_model_input"):
             return str(prompt.to_model_input())
         else:
-            # 最后fallback
+            # Final fallback.
             return str(prompt)
 
     def _create_skill_from_prompt(self, prompt: OptimizablePrompt, template_skill: Any) -> Any:
@@ -1174,4 +1174,3 @@ class TreeAwareOptimizer:
             }
         )
         return new_skill
-

@@ -49,6 +49,7 @@ demo-*/
 
 # Claude Code
 .claude/
+.worktrees/
 
 # OS
 .DS_Store
@@ -62,3 +63,4 @@ logs/
 tmp/
 temp/
 *.tmp
+third_party

@@ -316,18 +316,7 @@ class TrainFreeOptimizer:
 - ✅ 可以立即开始优化Prompt
 - ✅ 验证适配器在真实场景中的表现
 
-### 优先级2: LocalAdapter
-
-**目标**: 支持本地模型（llama.cpp, vLLM, Ollama）
-
-**价值**:
-- ✅ 零API成本
-- ✅ 隐私保护
-- ✅ 离线使用
-
-**预估时间**: 1-2天
-
-### 优先级3: CLI集成
+### 优先级 2: CLI 集成
 
 **目标**: 更新CLI使用新抽象层
 
@@ -467,7 +456,7 @@ except RuntimeError as e:
 
 ### 下一步 🔮
 - **优化引擎**（推荐） - 完成TGD循环
-- LocalAdapter - 本地模型支持
+
 - CLI集成 - 用户体验
 - 导出工具 - 跨工具复用
 

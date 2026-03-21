@@ -1,10 +1,10 @@
 """
-优化引擎完整示例
+Complete optimizer example.
 
-演示如何使用 TrainFreeOptimizer 进行提示词优化。
+Demonstrates how to optimize prompts with TrainFreeOptimizer.
 """
 
-# 直接从核心模块导入，避免触发适配器依赖
+# Import directly from core modules to avoid adapter dependencies.
 import sys
 from pathlib import Path
 
@@ -18,7 +18,7 @@ from evoskill.core.optimizer import TrainFreeOptimizer
 from evoskill.core.optimizer_config import OptimizerConfig
 import logging
 
-# 设置日志
+# Configure logging.
 logging.basicConfig(
     level=logging.INFO,
     format='%(message)s'
@@ -26,46 +26,46 @@ logging.basicConfig(
 
 
 def create_mock_failures():
-    """创建模拟的失败经验"""
+    """Create mock failure experiences."""
     failures = []
 
-    # 失败案例 1: 回答过于啰嗦
+    # Failure case 1: overly verbose answer.
     exp1 = ConversationExperience(
         messages=[
-            {"role": "user", "content": "什么是Python？"},
+            {"role": "user", "content": "What is Python?"},
         ],
-        response="Python是一种高级编程语言，由Guido van Rossum于1991年创建...（后面还有500字）",
+        response="Python is a high-level programming language created by Guido van Rossum in 1991... (another 500 words follow)",
         feedback=CompositeFeedback(
             feedback_type=FeedbackType.CRITIQUE,
-            critique="回答过于啰嗦，没有直接回答问题",
+            critique="The answer is too verbose and does not answer the question directly",
             score=0.3,
         ),
     )
     failures.append(exp1)
 
-    # 失败案例 2: 没有给出答案
+    # Failure case 2: no direct answer.
     exp2 = ConversationExperience(
         messages=[
-            {"role": "user", "content": "如何排序列表？"},
+            {"role": "user", "content": "How do I sort a list?"},
         ],
-        response="排序是一个复杂的话题，涉及计算机科学的基础...",
+        response="Sorting is a complex topic that touches the foundations of computer science...",
         feedback=CompositeFeedback(
             feedback_type=FeedbackType.CORRECTION,
-            critique="没有给出直接答案",
-            correction="你可以使用 sorted() 函数或 list.sort() 方法。",
+            critique="No direct answer was given",
+            correction="You can use the sorted() function or the list.sort() method.",
         ),
     )
     failures.append(exp2)
 
-    # 失败案例 3: 格式混乱
+    # Failure case 3: messy formatting.
     exp3 = ConversationExperience(
         messages=[
-            {"role": "user", "content": "解释一下机器学习"},
+            {"role": "user", "content": "Explain machine learning"},
         ],
-        response="机器学习是AI的一个分支它使用算法从数据中学习然后做出预测...",
+        response="Machine learning is a branch of AI it uses algorithms to learn from data and then make predictions...",
         feedback=CompositeFeedback(
             feedback_type=FeedbackType.CRITIQUE,
-            critique="格式混乱，难以阅读",
+            critique="The formatting is messy and hard to read",
             score=0.4,
         ),
     )
@@ -75,13 +75,13 @@ def create_mock_failures():
 
 
 def create_mock_adapter():
-    """创建模拟适配器（用于演示，不需要真实API）"""
+    """Create a mock adapter for demonstration purposes."""
     class MockAdapter(BaseModelAdapter):
         def __init__(self):
             super().__init__(model_name="mock-model")
 
         def generate(self, prompt, context=None, **kwargs):
-            return "这是一个模拟的回答。"
+            return "This is a mock response."
 
         def _call_api(self, messages, system=None, temperature=0.7, **kwargs):
             return "Mock API response"
@@ -90,15 +90,15 @@ def create_mock_adapter():
             return len(text.split())
 
         def compute_gradient(self, prompt, failures, target=None, **kwargs):
-            """模拟梯度计算"""
-            # 分析失败案例，生成改进建议
+            """Mock gradient computation."""
+            # Analyze failures and generate improvement guidance.
             critiques = [f.feedback.critique for f in failures if f.feedback.critique]
 
-            gradient_text = "分析失败案例发现：\n"
-            gradient_text += "1) 回答过于冗长和啰嗦\n"
-            gradient_text += "2) 缺少结构化格式\n"
-            gradient_text += "3) 未直接回答用户问题\n"
-            gradient_text += "\n建议：简化回答，使用清晰结构，直接给出答案。"
+            gradient_text = "Failure analysis found:\n"
+            gradient_text += "1) Responses are too long and verbose\n"
+            gradient_text += "2) Structured formatting is missing\n"
+            gradient_text += "3) The user's question is not answered directly\n"
+            gradient_text += "\nSuggestion: simplify the answer, use a clear structure, and provide the answer directly."
 
             return SimpleGradient(
                 text=gradient_text,
@@ -106,23 +106,23 @@ def create_mock_adapter():
             )
 
         def apply_gradient(self, prompt, gradient, conservative=False, **kwargs):
-            """模拟梯度应用"""
-            # 创建新版本的提示词
+            """Mock gradient application."""
+            # Create a new prompt version.
             new_prompt = prompt.bump_version()
 
             if conservative:
-                # 保守更新：只添加小提示
-                new_prompt.content = f"{prompt.content}\n\n注意：回答要简洁直接，格式清晰。"
+                # Conservative update: add a small instruction.
+                new_prompt.content = f"{prompt.content}\n\nNote: answer directly and concisely, with a clear structure."
             else:
-                # 激进更新：完全重写
+                # Aggressive update: rewrite completely.
                 new_prompt.content = (
-                    "你是一个简洁明了的助手。\n\n"
-                    "回答原则：\n"
-                    "1. 直接回答用户问题，不啰嗦\n"
-                    "2. 使用清晰的结构和格式\n"
-                    "3. 给出实用的示例和代码\n"
-                    "4. 避免过度解释\n\n"
-                    "保持回答简洁有力。"
+                    "You are a concise and clear assistant.\n\n"
+                    "Answering principles:\n"
+                    "1. Answer the user's question directly without rambling\n"
+                    "2. Use clear structure and formatting\n"
+                    "3. Provide practical examples and code when useful\n"
+                    "4. Avoid over-explaining\n\n"
+                    "Keep answers concise and effective."
                 )
 
             return new_prompt
@@ -131,102 +131,102 @@ def create_mock_adapter():
 
 
 def example_basic_optimization():
-    """示例 1: 基本优化流程"""
+    """Example 1: basic optimization flow."""
     print("\n" + "="*80)
-    print("示例 1: 基本优化流程")
+    print("Example 1: Basic Optimization Flow")
     print("="*80 + "\n")
 
-    # 1. 创建初始提示词
+    # 1. Create the initial prompt.
     initial_prompt = TextPrompt(
-        content="你是一个有用的AI助手。",
+        content="You are a helpful AI assistant.",
         version="v1.0",
     )
-    print(f"初始提示词 (v{initial_prompt.version}):")
+    print(f"Initial prompt (v{initial_prompt.version}):")
     print(f"{initial_prompt.content}\n")
 
-    # 2. 创建失败经验
+    # 2. Create failure experiences.
     failures = create_mock_failures()
-    print(f"收集到 {len(failures)} 个失败案例:")
+    print(f"Collected {len(failures)} failure cases:")
     for i, f in enumerate(failures, 1):
-        critique = f.feedback.critique if f.feedback else "无批评"
+        critique = f.feedback.critique if f.feedback else "No critique"
         print(f"  {i}. {critique}")
     print()
 
-    # 3. 创建适配器和优化器
+    # 3. Create the adapter and optimizer.
     adapter = create_mock_adapter()
     config = OptimizerConfig(
         max_steps=3,
         conservative=False,
-        validate_every_step=False,  # 暂时跳过验证
+        validate_every_step=False,  # Skip validation for now.
     )
     optimizer = TrainFreeOptimizer(adapter, config)
 
-    # 4. 运行优化
-    print("开始优化...\n")
+    # 4. Run optimization.
+    print("Starting optimization...\n")
     result = optimizer.optimize(
         prompt=initial_prompt,
         experiences=failures,
-        validator=None,  # 不使用验证器
+        validator=None,  # No validator for this example.
     )
 
-    # 5. 显示结果
+    # 5. Show results.
     print("\n" + "-"*80)
-    print("优化结果:")
+    print("Optimization results:")
     print("-"*80)
-    print(f"执行步数: {result.steps_taken}")
-    print(f"是否收敛: {result.converged}")
-    print(f"\n最终提示词 (v{result.optimized_prompt.version}):")
+    print(f"Steps taken: {result.steps_taken}")
+    print(f"Converged: {result.converged}")
+    print(f"\nFinal prompt (v{result.optimized_prompt.version}):")
     print(f"{result.optimized_prompt.content}\n")
 
-    # 显示历史
-    print("优化历史:")
+    # Show history.
+    print("Optimization history:")
     for step in result.history:
-        print(f"  步骤 {step.step_num}: v{step.old_prompt.version} → v{step.new_prompt.version}")
-        print(f"    失败数: {step.num_failures}")
-        print(f"    梯度摘要: {step.gradient[:60]}...")
+        print(f"  Step {step.step_num}: v{step.old_prompt.version} → v{step.new_prompt.version}")
+        print(f"    Failures: {step.num_failures}")
+        print(f"    Gradient summary: {step.gradient[:60]}...")
         print()
 
 
 def example_with_validation():
-    """示例 2: 带验证的优化"""
+    """Example 2: optimization with validation."""
     print("\n" + "="*80)
-    print("示例 2: 带验证的优化")
+    print("Example 2: Optimization with Validation")
     print("="*80 + "\n")
 
-    # 创建初始提示词
+    # Create the initial prompt.
     initial_prompt = TextPrompt(
-        content="回答用户问题。",
+        content="Answer the user's question.",
         version="v1.0",
     )
-    print(f"初始提示词: {initial_prompt.content}\n")
+    print(f"Initial prompt: {initial_prompt.content}\n")
 
-    # 创建失败经验
+    # Create failure experiences.
     failures = create_mock_failures()
 
-    # 创建验证器函数（模拟）
+    # Create a mock validator function.
     def mock_validator(prompt):
-        """模拟验证器 - 检查提示词质量"""
-        # 假设更好的提示词会：
-        # 1. 包含更多指导原则
-        # 2. 有清晰的结构
+        """Mock validator that checks prompt quality."""
+        # Assume better prompts:
+        # 1. include more guidance principles
+        # 2. have a clearer structure
 
         score = 0.0
 
-        # 检查长度（更详细的提示词得分更高）
+        # Check length: more detailed prompts score higher.
         score += min(len(prompt.content) / 300, 0.4)
 
-        # 检查是否包含关键指导词
-        keywords = ['直接', '简洁', '结构', '清晰', '原则']
+        # Check for key guidance words.
+        keywords = ["direct", "concise", "structure", "clear", "principles"]
         for kw in keywords:
             if kw in prompt.content:
                 score += 0.12
 
-        score = min(score, 1.0)  # 限制在1.0以内
+        score = min(score, 1.0)  # Clamp to 1.0.
 
-        print(f"  ✓ 验证得分: {score:.3f} (长度={len(prompt.content)}, 关键词={sum(1 for kw in keywords if kw in prompt.content)})")
+        print(f"  ✓ Validation score: {score:.3f} (length={len(prompt.content)}, keywords={sum(1 for kw in keywords if kw in prompt.content)})")
         return score
 
-    # 创建优化器
+    # Create the optimizer.
     adapter = create_mock_adapter()
     config = OptimizerConfig(
         max_steps=3,
@@ -236,81 +236,81 @@ def example_with_validation():
     )
     optimizer = TrainFreeOptimizer(adapter, config)
 
-    # 运行优化
-    print("开始优化（带验证）...\n")
+    # Run optimization.
+    print("Starting optimization (with validation)...\n")
     result = optimizer.optimize(
         prompt=initial_prompt,
         experiences=failures,
         validator=mock_validator,
     )
 
-    # 显示结果
+    # Show results.
     print("\n" + "-"*80)
-    print("优化结果:")
+    print("Optimization results:")
     print("-"*80)
-    print(f"初始得分: {result.final_score - result.improvement:.3f}")
-    print(f"最终得分: {result.final_score:.3f}")
-    print(f"总提升: {result.improvement:+.3f}")
-    print(f"\n最终提示词:\n{result.optimized_prompt.content}\n")
+    print(f"Initial score: {result.final_score - result.improvement:.3f}")
+    print(f"Final score: {result.final_score:.3f}")
+    print(f"Total improvement: {result.improvement:+.3f}")
+    print(f"\nFinal prompt:\n{result.optimized_prompt.content}\n")
 
 
 def example_strategies():
-    """示例 3: 不同策略对比"""
+    """Example 3: compare optimization strategies."""
     print("\n" + "="*80)
-    print("示例 3: 保守 vs 激进策略")
+    print("Example 3: Conservative vs Aggressive Strategy")
     print("="*80 + "\n")
 
     initial_prompt = TextPrompt(
-        content="帮助用户。",
+        content="Help the user.",
         version="v1.0",
     )
     failures = create_mock_failures()
 
-    # 保守策略
-    print("【保守策略】")
+    # Conservative strategy.
+    print("[Conservative Strategy]")
     print("-"*80)
     adapter_conservative = create_mock_adapter()
     config_conservative = OptimizerConfig(
         max_steps=2,
-        conservative=True,  # 保守模式
+        conservative=True,  # Conservative mode.
     )
     optimizer_c = TrainFreeOptimizer(adapter_conservative, config_conservative)
     result_c = optimizer_c.optimize(initial_prompt, failures, validator=None)
 
-    print(f"\n最终提示词 (保守):")
+    print(f"\nFinal prompt (conservative):")
     print(f"{result_c.optimized_prompt.content}\n")
 
-    # 激进策略
-    print("\n【激进策略】")
+    # Aggressive strategy.
+    print("\n[Aggressive Strategy]")
     print("-"*80)
     adapter_aggressive = create_mock_adapter()
     config_aggressive = OptimizerConfig(
         max_steps=2,
-        conservative=False,  # 激进模式
+        conservative=False,  # Aggressive mode.
     )
     optimizer_a = TrainFreeOptimizer(adapter_aggressive, config_aggressive)
     result_a = optimizer_a.optimize(initial_prompt, failures, validator=None)
 
-    print(f"\n最终提示词 (激进):")
+    print(f"\nFinal prompt (aggressive):")
     print(f"{result_a.optimized_prompt.content}\n")
 
-    # 对比
-    print("\n【对比分析】")
+    # Comparison.
+    print("\n[Comparison]")
     print("-"*80)
-    print(f"保守策略: 提示词长度 {len(result_c.optimized_prompt.content)} 字符")
-    print(f"激进策略: 提示词长度 {len(result_a.optimized_prompt.content)} 字符")
-    print("\n结论:")
-    print("- 保守策略: 小幅修改，保留原有结构")
-    print("- 激进策略: 大幅重写，引入新结构")
+    print(f"Conservative strategy: prompt length {len(result_c.optimized_prompt.content)} characters")
+    print(f"Aggressive strategy: prompt length {len(result_a.optimized_prompt.content)} characters")
+    print("\nConclusion:")
+    print("- Conservative strategy: small edits that preserve the existing structure")
+    print("- Aggressive strategy: major rewrite that introduces a new structure")
 
 
 def main():
-    """运行所有示例"""
+    """Run all examples."""
     print("\n" + "🔍 " * 20)
-    print("TrainFreeOptimizer 完整示例")
+    print("TrainFreeOptimizer Complete Example")
     print("🔍 " * 20)
 
-    # 运行示例
+    # Run examples.
     example_basic_optimization()
     print("\n" + "="*80 + "\n")
 
@@ -319,20 +319,20 @@ def main():
 
     example_strategies()
 
-    # 总结
+    # Summary.
     print("\n" + "="*80)
-    print("✅ 示例运行完成！")
+    print("✅ Example run completed!")
     print("="*80)
-    print("\n核心要点:")
-    print("1. TrainFreeOptimizer 使用失败案例进行提示词优化")
-    print("2. 支持验证器来评估优化效果")
-    print("3. 保守/激进策略控制更新幅度")
-    print("4. 早停机制防止过度优化")
-    print("\n下一步:")
-    print("- 使用真实API适配器（OpenAI/Anthropic）")
-    print("- 收集真实的失败案例")
-    print("- 设计合适的验证指标")
-    print("- 在生产环境中部署优化")
+    print("\nKey takeaways:")
+    print("1. TrainFreeOptimizer uses failure cases to improve prompts")
+    print("2. Validators can be used to evaluate optimization quality")
+    print("3. Conservative/aggressive strategies control update magnitude")
+    print("4. Early stopping helps prevent over-optimization")
+    print("\nNext steps:")
+    print("- Use a real API adapter (OpenAI/Anthropic)")
+    print("- Collect real failure cases")
+    print("- Design suitable validation metrics")
+    print("- Deploy the optimizer in production")
 
 
 if __name__ == "__main__":

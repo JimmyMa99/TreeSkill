@@ -329,7 +329,7 @@ deploy_prompt(result.optimized_prompt)
 
 ### 2. 模型无关设计
 - 统一的抽象接口
-- 支持任何LLM（OpenAI、Anthropic、本地模型）
+- 支持 OpenAI、Anthropic 等主流 LLM
 - 易于扩展新模型
 
 ### 3. 可解释优化

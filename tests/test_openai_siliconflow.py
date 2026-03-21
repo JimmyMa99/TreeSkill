@@ -21,8 +21,8 @@ from evoskill.core import (
 from evoskill.adapters.openai import OpenAIAdapter
 
 
-def test_siliconflow_basic():
-    """Test basic generation with SiliconFlow API."""
+def _run_siliconflow_basic():
+    """Run the basic SiliconFlow generation flow and return success details."""
     print("\n" + "=" * 60)
     print("Test 1: Basic Generation with SiliconFlow")
     print("=" * 60)
@@ -50,7 +50,7 @@ def test_siliconflow_basic():
 
     # Create prompt
     prompt = TextPrompt(
-        content="你是一个友好的助手，请用简洁的语言回答问题。",
+        content="You are a friendly assistant. Answer questions concisely.",
         name="test-assistant",
     )
 
@@ -59,12 +59,22 @@ def test_siliconflow_basic():
     try:
         response = adapter.generate(prompt, temperature=0.7)
         print(f"✓ Response: {response}")
-        return adapter, prompt
+        return adapter, prompt, response
     except Exception as e:
         print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
         return None
+
+
+def test_siliconflow_basic():
+    """Test basic generation with SiliconFlow API."""
+    result = _run_siliconflow_basic()
+    if result is None:
+        return
+
+    _adapter, _prompt, response = result
+    assert response
 
 
 def test_siliconflow_gradient():
@@ -93,18 +103,18 @@ def test_siliconflow_gradient():
 
     # Create prompt
     prompt = TextPrompt(
-        content="你是一个助手。",
+        content="You are an assistant.",
         name="simple-assistant",
-        target="更友好",
+        target="be friendlier",
     )
 
     # Create failure experience
     experience = ConversationExperience(
-        messages=[{"role": "user", "content": "你好"}],
-        response="你好。",
+        messages=[{"role": "user", "content": "Hello"}],
+        response="Hello.",
         feedback=CompositeFeedback(
             score=0.3,
-            critique="太冷淡，不够友好"
+            critique="Too cold and not friendly enough"
         ),
     )
 
@@ -120,7 +130,7 @@ def test_siliconflow_gradient():
             base_url=base_url,
         )
         gradient = gradient_adapter.compute_gradient(
-            prompt, [experience], target="更友好"
+            prompt, [experience], target="be friendlier"
         )
         print(f"✓ Gradient computed:")
         print(f"  {str(gradient)[:200]}...")
@@ -159,15 +169,15 @@ def test_siliconflow_context():
     )
 
     prompt = TextPrompt(
-        content="你是一个助手，请记住之前的对话内容。",
+        content="You are an assistant. Remember the earlier conversation.",
         name="context-test",
     )
 
     # Create conversation context
     experiences = [
         ConversationExperience(
-            messages=[{"role": "user", "content": "我叫张三"}],
-            response="你好，张三！很高兴认识你。",
+            messages=[{"role": "user", "content": "My name is Alex."}],
+            response="Hi, Alex! Nice to meet you.",
         ),
     ]
 
@@ -179,7 +189,7 @@ def test_siliconflow_context():
         response = adapter.generate(prompt, context=experiences, temperature=0.7)
         print(f"✓ Response: {response}")
 
-        if "张三" in response:
+        if "Alex" in response:
             print("✓ Model correctly used context!")
         else:
             print("⚠️ Model may not have used context")
@@ -196,7 +206,7 @@ def main():
 
     try:
         # Test 1: Basic generation
-        result = test_siliconflow_basic()
+        result = _run_siliconflow_basic()
 
         if result:
             # Test 2: Context

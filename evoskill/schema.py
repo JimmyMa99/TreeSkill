@@ -31,6 +31,12 @@ class ImageURL(BaseModel):
     url: str  # Regular URL or base64 data-URL
 
 
+class AudioURL(BaseModel):
+    """Inner payload for an audio content part."""
+
+    url: str  # Regular URL or base64 data-URL
+
+
 class ImageContent(BaseModel):
     """An image_url content part (for vision models)."""
 
@@ -38,22 +44,11 @@ class ImageContent(BaseModel):
     image_url: ImageURL
 
 
-class InputAudio(BaseModel):
-    """Inner payload for an audio content part."""
-
-    data: str  # base64-encoded audio
-    format: str = "wav"  # wav, mp3, etc.
-
-
 class AudioContent(BaseModel):
-    """An input_audio content part (for speech models).
+    """An audio_url content part (for omni/audio-capable models)."""
 
-    Follows OpenAI's ``input_audio`` content part format.
-    Requires audio-capable models (e.g. gpt-4o-audio-preview).
-    """
-
-    type: Literal["input_audio"] = "input_audio"
-    input_audio: InputAudio
+    type: Literal["audio_url"] = "audio_url"
+    audio_url: AudioURL
 
 
 # Discriminated union keyed on `type`
@@ -89,7 +84,7 @@ class Message(BaseModel):
 # ---------------------------------------------------------------------------
 
 class AgendaType(str, Enum):
-    """事件类型。"""
+    """Agenda event type."""
     REMINDER = "reminder"
     RECURRING = "recurring"
     DEADLINE = "deadline"
@@ -97,7 +92,7 @@ class AgendaType(str, Enum):
 
 
 class Recurrence(str, Enum):
-    """周期规则。"""
+    """Recurrence rule."""
     ONCE = "once"
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -106,63 +101,64 @@ class Recurrence(str, Enum):
 
 
 class AgendaEntry(BaseModel):
-    """一条日程事件，存储在 config.yaml 的 ``agenda`` 列表中。
+    """A single agenda entry stored in the ``agenda`` list of config.yaml.
 
-    Skill 加载时自动读取，对话开始时注入上下文。
+    It is loaded automatically with the Skill and injected as context
+    when a conversation begins.
 
-    config.yaml 格式::
+    Example config.yaml format::
 
         agenda:
           - type: recurring
-            title: 结婚纪念日
+            title: Wedding anniversary
             recurrence: yearly
             month: 3
             day: 14
             origin_year: 2021
           - type: reminder
-            title: 提醒开会
+            title: Meeting reminder
             due: "2026-03-21T15:30:00"
     """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    type: AgendaType = Field(..., description="事件类型")
-    title: str = Field(..., description="事件标题")
-    description: str = Field(default="", description="详细描述")
+    type: AgendaType = Field(..., description="Event type")
+    title: str = Field(..., description="Event title")
+    description: str = Field(default="", description="Detailed description")
     tags: List[str] = Field(default_factory=list)
 
-    # -- 时间 --
+    # -- Time --
     due: Optional[datetime] = Field(
         default=None,
-        description="到期时间（reminder/deadline 使用）",
+        description="Due timestamp (used by reminder/deadline events)",
     )
     month: Optional[int] = Field(default=None, ge=1, le=12)
     day: Optional[int] = Field(default=None, ge=1, le=31)
     weekday: Optional[int] = Field(
         default=None, ge=0, le=6,
-        description="星期几 (0=Mon, 6=Sun)",
+        description="Day of week (0=Mon, 6=Sun)",
     )
     time_of_day: Optional[str] = Field(
-        default=None, description="HH:MM 格式",
+        default=None, description="Time in HH:MM format",
     )
 
-    # -- 周期 --
+    # -- Recurrence --
     recurrence: Recurrence = Field(default=Recurrence.ONCE)
 
-    # -- 状态 --
+    # -- State --
     done: bool = Field(default=False)
     active: bool = Field(default=True)
 
-    # -- 元信息 --
+    # -- Metadata --
     origin_year: Optional[int] = Field(
         default=None,
-        description="起始年份（用于计算第 N 周年）",
+        description="Origin year (used to compute the Nth anniversary)",
     )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
     )
 
     def matches_date(self, target: date) -> bool:
-        """判断此事件是否匹配给定日期。"""
+        """Return whether this event matches the given date."""
         if not self.active:
             return False
         if self.done and self.recurrence == Recurrence.ONCE:
@@ -186,12 +182,12 @@ class AgendaEntry(BaseModel):
         return False
 
     def display_info(self, reference_date: Optional[date] = None) -> str:
-        """生成人类可读的事件描述。"""
+        """Generate a human-readable description of the event."""
         parts = [self.title]
         if self.recurrence == Recurrence.YEARLY and self.origin_year and reference_date:
             years = reference_date.year - self.origin_year
             if years > 0:
-                parts.append(f"(第 {years} 年)")
+                parts.append(f"(year {years})")
         if self.due and self.recurrence == Recurrence.ONCE:
             parts.append(f"[{self.due.strftime('%Y-%m-%d %H:%M')}]")
         elif self.time_of_day:
@@ -202,49 +198,49 @@ class AgendaEntry(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Tool Reference — 声明 Skill 使用的外部工具
+# Tool Reference — declare external tools used by a Skill
 # ---------------------------------------------------------------------------
 
 class ToolRef(BaseModel):
-    """Skill 级别的工具声明，存储在 config.yaml 的 ``tools`` 列表中。
+    """Skill-level tool declaration stored in the ``tools`` list of config.yaml.
 
-    工具可以是三种来源之一:
-    - **script** — 来自同目录的 script.py（自动推导，无需声明）
-    - **http**   — 远程 HTTP API
-    - **mcp**    — MCP 服务器上的工具
+    A tool can come from one of three sources:
+    - **script** — inferred automatically from script.py in the same directory
+    - **http**   — remote HTTP API
+    - **mcp**    — tool exposed by an MCP server
 
-    config.yaml 格式::
+    Example config.yaml format::
 
         tools:
           - name: weather
             type: http
             endpoint: https://api.weather.com/current
             method: GET
-            description: 获取天气信息
+            description: Fetch current weather information
 
           - name: database
             type: mcp
             mcp_server: localhost:5000
             tool_name: query
-            description: 查询数据库
+            description: Query the database
     """
 
-    name: str = Field(..., description="工具名称")
+    name: str = Field(..., description="Tool name")
     type: str = Field(
         default="http",
-        description="工具类型: http, mcp",
+        description="Tool type: http or mcp",
     )
-    description: str = Field(default="", description="工具描述（供 LLM 理解）")
+    description: str = Field(default="", description="Tool description for the LLM")
 
-    # HTTP 工具字段
-    endpoint: Optional[str] = Field(default=None, description="HTTP API 端点")
-    method: str = Field(default="GET", description="HTTP 方法")
+    # HTTP tool fields
+    endpoint: Optional[str] = Field(default=None, description="HTTP API endpoint")
+    method: str = Field(default="GET", description="HTTP method")
     headers: Dict[str, str] = Field(default_factory=dict)
 
-    # MCP 工具字段
-    mcp_server: Optional[str] = Field(default=None, description="MCP 服务器地址")
-    tool_name: Optional[str] = Field(default=None, description="MCP 工具名")
-    auth_token: Optional[str] = Field(default=None, description="MCP 认证 token")
+    # MCP tool fields
+    mcp_server: Optional[str] = Field(default=None, description="MCP server address")
+    tool_name: Optional[str] = Field(default=None, description="MCP tool name")
+    auth_token: Optional[str] = Field(default=None, description="MCP auth token")
 
 
 # ---------------------------------------------------------------------------
@@ -271,34 +267,34 @@ class Skill(BaseModel):
 
     name: str = Field(
         ...,
-        description="Skill 名称，kebab-case，≤64字符，需与目录名一致。",
+        description="Skill name in kebab-case, at most 64 characters, and matching the directory name.",
     )
     description: str = Field(
         default="",
-        description="Skill 描述，≤1024字符。说明 skill 的用途和触发条件。",
+        description="Skill description, up to 1024 characters, explaining the use case and trigger conditions.",
     )
     version: str = "v1.0"
     system_prompt: str = Field(
         default="",
-        description="SKILL.md Markdown body — 即 LLM 的 system prompt，也是 APO 优化目标。",
+        description="Markdown body of SKILL.md — the LLM system prompt and the target optimized by APO.",
     )
     target: Optional[str] = Field(
         default=None,
-        description="用户一句话优化方向，如'更像人'、'更简洁'。APO 优化时会参考此目标。",
+        description="One-line optimization target from the user, such as 'more human' or 'more concise'. APO uses this as guidance.",
     )
     few_shot_messages: List[Message] = Field(default_factory=list)
     config: Dict[str, Any] = Field(default_factory=dict)
     script: Optional[str] = Field(
         default=None,
-        description="可选的 Python 脚本源码（来自 script.py），定义自定义工具函数。",
+        description="Optional Python source code from script.py that defines custom tool functions.",
     )
     agenda: List[AgendaEntry] = Field(
         default_factory=list,
-        description="长程日程列表，存储在 config.yaml 的 agenda 字段，加载时自动读取。",
+        description="Long-horizon agenda entries stored in the agenda field of config.yaml and loaded automatically.",
     )
     tools: List[ToolRef] = Field(
         default_factory=list,
-        description="Skill 声明的外部工具列表，存储在 config.yaml 的 tools 字段。",
+        description="External tool declarations for the Skill, stored in the tools field of config.yaml.",
     )
 
 

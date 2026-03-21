@@ -81,17 +81,17 @@ def _handle_resume(skill_path: Path, *, force_restart: bool = False) -> ResumeSt
 
     if force_restart:
         state.clear()
-        console.print("[dim]已清除旧进度（--no-resume），重新开始[/dim]")
+        console.print("[dim]Cleared previous progress (--no-resume); starting fresh[/dim]")
         return None
 
-    console.print(f"\n[bold yellow]⚠ 发现未完成的优化任务[/bold yellow]")
+    console.print(f"\n[bold yellow]⚠ Found an unfinished optimization run[/bold yellow]")
     console.print(state.summary())
     console.print()
 
     try:
         from rich.prompt import Prompt
         choice = Prompt.ask(
-            "继续上次的优化 (resume) 还是重新开始 (restart)?",
+            "Resume the previous optimization or restart from scratch?",
             choices=["resume", "restart"],
             default="resume",
         )
@@ -99,11 +99,11 @@ def _handle_resume(skill_path: Path, *, force_restart: bool = False) -> ResumeSt
         choice = "resume"
 
     if choice == "resume":
-        console.print("[green]✓ 从断点继续[/green]")
+        console.print("[green]✓ Resuming from saved state[/green]")
         return state
     else:
         state.clear()
-        console.print("[dim]已清除旧进度，重新开始[/dim]")
+        console.print("[dim]Cleared previous progress; starting fresh[/dim]")
         return None
 
 
@@ -266,14 +266,14 @@ def main(argv: list[str] | None = None) -> None:
             resume.clear()  # all done — remove resume file
         except KeyboardInterrupt:
             console.print(
-                "\n[yellow]⚠ 优化被中断，进度已保存。"
-                "下次运行 --optimize 可从断点继续。[/yellow]"
+                "\n[yellow]⚠ Optimization interrupted. Progress has been saved. "
+                "Run --optimize again to resume.[/yellow]"
             )
             sys.exit(1)
         except Exception:
             console.print(
-                "\n[red]✗ 优化出错，进度已保存。"
-                "下次运行 --optimize 可从断点继续。[/red]"
+                "\n[red]✗ Optimization failed, but progress has been saved. "
+                "Run --optimize again to resume.[/red]"
             )
             raise
 

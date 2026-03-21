@@ -43,9 +43,9 @@ class MockAdapter(BaseModelAdapter):
         prompt_text = self._extract_prompt_text(prompt)
 
         # Simulate different responses based on prompt content
-        if "写作" in prompt_text or "write" in prompt_text.lower():
-            return "这是一个模拟的写作回复。"
-        elif "代码" in prompt_text or "code" in prompt_text.lower():
+        if "writing" in prompt_text.lower() or "write" in prompt_text.lower():
+            return "This is a mock writing response."
+        elif "code" in prompt_text.lower():
             return "def example():\n    return 'mock code'"
         else:
             return f"Mock response to: {prompt_text[:50]}..."
@@ -64,24 +64,24 @@ class MockAdapter(BaseModelAdapter):
         messages_str = str(messages)
 
         # Simulate gradient computation (analysis)
-        if "分析" in messages_str and ("failures" in messages_str.lower() or "失败" in messages_str):
+        if "analysis" in messages_str.lower() and "failures" in messages_str.lower():
             return (
-                "分析结果显示，当前Prompt存在以下问题：\n"
-                "1. 指令不够具体\n"
-                "2. 缺少示例\n"
-                "3. 语气过于正式\n\n"
-                "建议修改这些方面。"
+                "Analysis shows that the current prompt has the following issues:\n"
+                "1. The instructions are not specific enough\n"
+                "2. Examples are missing\n"
+                "3. The tone is too formal\n\n"
+                "Consider improving those areas."
             )
 
         # Simulate prompt rewrite
-        if "rewrite" in messages_str.lower() or "重写" in messages_str:
+        if "rewrite" in messages_str.lower():
             return (
-                "你是一个专业且友好的助手。\n\n"
-                "你的任务是：\n"
-                "1. 理解用户需求\n"
-                "2. 提供清晰、准确的回答\n"
-                "3. 保持友善和专业的语调\n\n"
-                "记住：简洁胜于冗长。"
+                "You are a professional and friendly assistant.\n\n"
+                "Your tasks are:\n"
+                "1. Understand the user's needs\n"
+                "2. Provide clear and accurate answers\n"
+                "3. Maintain a friendly and professional tone\n\n"
+                "Remember: concise beats verbose."
             )
 
         # Default response
@@ -112,10 +112,10 @@ if __name__ == "__main__":
 
     # 2. Create prompt
     prompt = TextPrompt(
-        content="你是一个写作助手。",
+        content="You are a writing assistant.",
         name="writing-assistant",
         version="v1.0",
-        target="更自然",
+        target="sound more natural",
     )
     print(f"\n✓ Created prompt: {prompt.name} v{prompt.version}")
     print(f"  - Tokens: {adapter.count_tokens(prompt)}")
@@ -134,15 +134,15 @@ if __name__ == "__main__":
 
     # 5. Create experience with feedback
     experience = ConversationExperience(
-        messages=[{"role": "user", "content": "写一首诗"}],
-        response="春眠不觉晓...",
-        feedback=CompositeFeedback(score=0.3, critique="太老套"),
+        messages=[{"role": "user", "content": "Write a poem"}],
+        response="A spring morning slips by unnoticed...",
+        feedback=CompositeFeedback(score=0.3, critique="Too clichéd"),
     )
     print(f"\n✓ Created experience (failure={experience.is_failure})")
 
     # 6. Compute gradient
     failures = [experience]
-    gradient = adapter.compute_gradient(prompt, failures, target="更原创")
+    gradient = adapter.compute_gradient(prompt, failures, target="be more original")
     print(f"\n✓ Computed gradient:")
     print(f"  {str(gradient)[:100]}...")
 

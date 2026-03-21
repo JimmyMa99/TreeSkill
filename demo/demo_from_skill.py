@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Demo 2: 从已有 writing-skill 开始 — 加载预设的写作技能，交互式对话并优化。
+"""Demo 2: Start from an existing writing skill — Load预设的写作技能，交互式对话并优化。
 
-使用方式:
+Usage:
     cd /Users/mzm/code/evo_agent
     conda activate pr
     python demo/demo_from_skill.py
 
-每个步骤都支持交互：你可以跳过、修改输入、自定义反馈、改变 target 等。
+每个Step都支持交互：你可以Skip、修改输入、自定义Feedback、改变 target 等。
 """
 
 import sys
@@ -37,27 +37,27 @@ def banner(text: str) -> None:
 
 
 # ==================================================================
-# Step 1: 加载已有的 writing-skill
+# Step 1: Load已有的 writing-skill
 # ==================================================================
-banner("📂 Step 1: 加载已有的 writing-skills.yaml")
+banner("📂 Step 1: Load已有的 writing-skills.yaml")
 
 skill_path = Path("demo/writing-skills.yaml")
 writing_skill = skill_module.load(skill_path)
 
-console.print(f"[green]✓[/green] 已加载 Skill: [cyan]{writing_skill.name}[/cyan] ({writing_skill.version})")
+console.print(f"[green]✓[/green] 已Load Skill: [cyan]{writing_skill.name}[/cyan] ({writing_skill.version})")
 console.print(Panel(
     writing_skill.system_prompt,
-    title="当前 System Prompt",
+    title="Current System Prompt",
     border_style="dim",
 ))
 
-if not Confirm.ask("继续?", default=True):
+if not Confirm.ask("Continue?", default=True):
     sys.exit(0)
 
 # ==================================================================
-# Step 2: 用已有 Skill 生成内容
+# Step 2: Generate content with the existing Skill
 # ==================================================================
-banner("💬 Step 2: 用已有 Skill 生成内容 — 基线效果")
+banner("💬 Step 2: Generate content with the existing Skill — baseline behavior")
 
 llm = LLMClient(config)
 storage = TraceStorage(config.storage)
@@ -68,26 +68,26 @@ default_prompts = [
     "帮我写一封邮件，婉拒一个不想参加的饭局",
 ]
 
-console.print("[dim]预置了 3 条测试 prompt，你可以修改或添加自己的。[/dim]\n")
+console.print("[dim]预置了 3 条test prompt，你可以修改或添加自己的。[/dim]\n")
 test_prompts = []
 for i, default in enumerate(default_prompts, 1):
     console.print(f"[dim]预置 {i}:[/dim] {default}")
-    choice = Prompt.ask(f"  操作", choices=["使用", "修改", "跳过"], default="使用")
+    choice = Prompt.ask(f"  操作", choices=["使用", "修改", "Skip"], default="使用")
     if choice == "使用":
         test_prompts.append(default)
     elif choice == "修改":
-        custom = Prompt.ask("  输入你的 prompt")
+        custom = Prompt.ask("  Enter your prompt")
         test_prompts.append(custom)
-    # "跳过" → do nothing
+    # "Skip" → do nothing
 
 # 允许添加额外 prompt
-while Confirm.ask("添加更多 prompt?", default=False):
+while Confirm.ask("Add more prompts?", default=False):
     extra = Prompt.ask("  输入 prompt")
     if extra.strip():
         test_prompts.append(extra.strip())
 
 if not test_prompts:
-    console.print("[yellow]没有 prompt，跳过生成步骤。[/yellow]")
+    console.print("[yellow]没有 prompt，Skip生成Step。[/yellow]")
 else:
     traces = []
     for i, prompt_text in enumerate(test_prompts, 1):
@@ -96,7 +96,7 @@ else:
 
         console.print(f"\n[bold green]User {i}:[/bold green] {prompt_text}")
 
-        with console.status("[dim]生成中…[/dim]"):
+        with console.status("[dim]Generating…[/dim]"):
             response = llm.generate(messages)
 
         console.print(Panel(
@@ -110,20 +110,20 @@ else:
         traces.append(trace)
 
     # ==================================================================
-    # Step 3: 交互式反馈
+    # Step 3: 交互式Feedback
     # ==================================================================
-    banner("📋 Step 3: 对生成内容给出反馈")
+    banner("📋 Step 3: Provide feedback on the generated content")
 
-    console.print("[dim]对每条生成结果，你可以评分、给出批评，或跳过。[/dim]\n")
+    console.print("[dim]对每条生成results，你可以Score、给出Critique，或Skip。[/dim]\n")
     for i, (trace, prompt_text) in enumerate(zip(traces, test_prompts), 1):
         console.print(f"[cyan]Task {i}:[/cyan] {prompt_text[:50]}…" if len(prompt_text) > 50 else f"[cyan]Task {i}:[/cyan] {prompt_text}")
-        action = Prompt.ask("  反馈", choices=["评分", "跳过"], default="评分")
-        if action == "跳过":
+        action = Prompt.ask("  Feedback", choices=["Score", "Skip"], default="Score")
+        if action == "Skip":
             continue
 
-        score = float(Prompt.ask("  评分 (0.0-1.0, 越低越差)", default="0.3"))
-        critique = Prompt.ask("  批评/建议 (直接回车跳过)", default="")
-        correction = Prompt.ask("  理想回复 (直接回车跳过)", default="")
+        score = float(Prompt.ask("  Score (0.0-1.0, 越低越差)", default="0.3"))
+        critique = Prompt.ask("  Critique / suggestion (直接回车Skip)", default="")
+        correction = Prompt.ask("  Ideal reply (直接回车Skip)", default="")
 
         fb = Feedback(
             score=max(0.0, min(1.0, score)),
@@ -132,35 +132,35 @@ else:
         )
         trace.feedback = fb
         storage.append(trace)
-        console.print(f"  [green]✓ 反馈已记录 (score={fb.score})[/green]")
+        console.print(f"  [green]✓ Feedback已记录 (score={fb.score})[/green]")
 
     # ==================================================================
-    # Step 4: 设置优化方向
+    # Step 4: Set优化方向
     # ==================================================================
-    banner("🎯 Step 4: 设置优化方向")
+    banner("🎯 Step 4: Set优化方向")
 
-    current_target = writing_skill.target or "(未设置)"
-    console.print(f"[dim]当前 target:[/dim] {current_target}")
+    current_target = writing_skill.target or "(not set)"
+    console.print(f"[dim]Current target:[/dim] {current_target}")
     new_target = Prompt.ask(
-        "输入新的优化方向 (直接回车保持不变)",
-        default=writing_skill.target or "更像真人说话，少套话，有温度和个性",
+        "Enter a new optimization target (press Enter to keep the current one)",
+        default=writing_skill.target or "sound more human, avoid boilerplate, and feel warm and distinctive",
     )
     writing_skill = writing_skill.model_copy(update={"target": new_target})
     skill_module.save(writing_skill, skill_path)
-    console.print(f"[green]✓[/green] Target 已设置: [bold]{writing_skill.target}[/bold]")
+    console.print(f"[green]✓[/green] Target 已Set: [bold]{writing_skill.target}[/bold]")
 
     # ==================================================================
-    # Step 5: 运行 APO 优化
+    # Step 5: Run APO optimization
     # ==================================================================
-    if Confirm.ask("\n运行 APO 优化?", default=True):
-        banner("🧠 Step 5: 运行 APO 优化")
+    if Confirm.ask("\nRun APO optimization?", default=True):
+        banner("🧠 Step 5: Run APO optimization")
 
         engine = APOEngine(config, llm)
         feedback_traces = storage.get_feedback_samples()
-        console.print(f"[dim]找到 {len(feedback_traces)} 条反馈样本[/dim]")
+        console.print(f"[dim]找到 {len(feedback_traces)} 条Feedback样本[/dim]")
 
         if feedback_traces:
-            with console.status("[dim]APO 优化中…[/dim]"):
+            with console.status("[dim]APO optimization in progress…[/dim]"):
                 evolved_skill = engine.optimize(writing_skill, feedback_traces)
 
             skill_module.save(evolved_skill, skill_path)
@@ -178,12 +178,12 @@ else:
             # 对比 prompt 变化
             console.print(Panel(
                 writing_skill.system_prompt,
-                title="📝 优化前",
+                title="📝 Before optimization",
                 border_style="dim",
             ))
             console.print(Panel(
                 evolved_skill.system_prompt,
-                title="📝 优化后",
+                title="📝 After optimization",
                 border_style="bright_green",
             ))
 
@@ -191,14 +191,14 @@ else:
             # Step 6: 用进化后的 Skill 重新生成
             # ==================================================================
             if test_prompts and Confirm.ask("\n用进化后的 Skill 重新生成第一个任务做对比?", default=True):
-                banner("🔄 Step 6: A/B 对比")
+                banner("🔄 Step 6: A/B comparison")
 
                 compare_prompt = test_prompts[0]
                 user_msg = Message(role="user", content=compare_prompt)
                 console.print(f"[bold green]User:[/bold green] {compare_prompt}\n")
 
                 messages_v2 = skill_module.compile_messages(evolved_skill, [user_msg])
-                with console.status("[dim]生成中…[/dim]"):
+                with console.status("[dim]Generating…[/dim]"):
                     response_v2 = llm.generate(messages_v2)
 
                 old_text = traces[0].prediction.content
@@ -215,8 +215,8 @@ else:
                     border_style="bright_green",
                 ))
         else:
-            console.print("[yellow]没有反馈样本，跳过优化。[/yellow]")
+            console.print("[yellow]没有Feedback样本，Skip优化。[/yellow]")
 
-console.print("\n[bold]✨ Demo 完成！[/bold]")
-console.print("[dim]进化后的 skill 已保存到 demo/writing-skills.yaml[/dim]")
-console.print("[dim]你可以继续用 CLI 与它交互：python -m evoskill.main --skill demo/example[/dim]\n")
+console.print("\n[bold]✨ Demo complete![/bold]")
+console.print("[dim]The evolved skill has been saved to demo/writing-skills.yaml[/dim]")
+console.print("[dim]你可以Continue用 CLI 与它交互：python -m evoskill.main --skill demo/example[/dim]\n")

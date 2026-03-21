@@ -1,10 +1,40 @@
 """Test script to verify core abstraction layer works."""
 
 import sys
+import types
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+for missing_module, attrs in {
+    "evoskill.script": {
+        "ScriptValidator": object,
+        "ScriptValidationResult": object,
+        "ScriptIssue": object,
+        "validate_script": lambda *args, **kwargs: None,
+        "validate_script_file": lambda *args, **kwargs: None,
+        "load_script": lambda *args, **kwargs: None,
+        "save_script": lambda *args, **kwargs: None,
+        "load_script_as_tools": lambda *args, **kwargs: {},
+    },
+    "evoskill.memory": {
+        "MEMORY_FILE": "memory.json",
+        "MemoryType": object,
+        "MemoryEntry": object,
+        "MemoryStore": object,
+        "MemoryCompiler": object,
+    },
+    "evoskill.agenda": {
+        "AgendaManager": object,
+        "compile_agenda_context": lambda *args, **kwargs: "",
+        "parse_due": lambda *args, **kwargs: None,
+    },
+}.items():
+    module = types.ModuleType(missing_module)
+    for name, value in attrs.items():
+        setattr(module, name, value)
+    sys.modules.setdefault(missing_module, module)
 
 from evoskill.core import (
     TextPrompt,
@@ -14,6 +44,7 @@ from evoskill.core import (
     ConversationExperience,
     FeedbackType,
 )
+from evoskill.schema import AudioContent, AudioURL, Message, TextContent
 
 
 def test_text_prompt():
@@ -69,6 +100,29 @@ def test_multimodal_prompt():
     assert data["text"] == "Analyze this image"
 
     print("✓ MultimodalPrompt tests passed")
+
+
+def test_message_audio_content_part():
+    """Test audio content parts serialize to OpenAI-compatible format."""
+    print("\nTesting audio content part...")
+
+    msg = Message(
+        role="user",
+        content=[
+            AudioContent(
+                audio_url=AudioURL(url="data:audio/wav;base64,ZmFrZQ==")
+            ),
+            TextContent(text="Please summarize this audio clip"),
+        ],
+    )
+
+    data = msg.to_api_dict()
+    assert data["role"] == "user"
+    assert data["content"][0]["type"] == "audio_url"
+    assert data["content"][0]["audio_url"]["url"].startswith("data:audio/wav;base64,")
+    assert data["content"][1]["type"] == "text"
+
+    print("✓ Audio content part tests passed")
 
 
 def test_gradient():
