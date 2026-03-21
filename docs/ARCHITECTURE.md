@@ -52,7 +52,21 @@ CheckpointManager.save()            ← checkpoint.py
 skill_module.save(new_skill)        ← skill.py（allow_unicode=True）
 ```
 
-### 2.1 树模式数据流（额外步骤）
+### 2.1 数据集驱动模式数据流
+
+```
+Dataset (ChatML JSONL)                ← dataset.py
+    │
+    ├──► --optimize --dataset         ← evaluator.py (全自动)
+    │        auto-judge 评分 → Traces → APO 优化
+    │
+    └──► --annotate --dataset         ← annotate.py (人机协作)
+             逐条展示 → auto/human judge → Traces
+                  │                         │
+                  ├──► APO 优化             └──► export_dpo() → DPO 微调
+```
+
+### 2.2 树模式数据流（额外步骤）
 
 ```
 SkillTree.load(directory)           ← skill_tree.py
@@ -99,6 +113,21 @@ SkillTree.save(directory)
 ### storage.py — Trace 存储
 - 追加写入 JSONL，每行一个 JSON 对象
 - `get_feedback_samples(min_score, max_score)` 筛选"差评"样本给 APO
+- `get_dpo_pairs()` 提取有 correction 的 traces 为 DPO 偏好对
+- `export_dpo(output_path)` 导出 DPO JSONL（prompt/chosen/rejected）
+
+### dataset.py — 数据集加载
+- 加载 ChatML JSONL 格式数据集（OpenAI fine-tuning 格式）
+- 最后一条 assistant message 作为 ground truth
+
+### evaluator.py — 自动评估
+- 对数据集批量跑模型预测 + LM judge 评分
+- 输出 `List[Trace]` 供 APO 使用
+
+### annotate.py — 人机协作标注
+- 数据集驱动的标注模式（`--annotate --dataset`）
+- auto / manual 模式可运行时切换（`/auto`、`/manual`）
+- 人工反馈作为偏好锚点，同时服务 APO 梯度计算和 DPO 数据导出
 
 ### skill.py — Skill 管理
 - `load/save` 支持 YAML 和 JSON
@@ -200,7 +229,9 @@ ckpt/
 - `--config <path>` — YAML 配置文件路径（见 `demo/example/config.yaml`）
 - `--skill <name-or-path>` — 支持 YAML 文件**和**目录（自动判断是否加载为树）
 - `--optimize` — 批量优化模式（支持树）
-- `--dataset <path>` — ChatML JSONL 数据集路径，配合 `--optimize` 自动评估并生成 traces
+- `--annotate` — 数据集驱动的人机协作标注模式（需配合 `--dataset`）
+- `--manual` — 标注模式下使用纯手动 judge（默认 auto）
+- `--dataset <path>` — ChatML JSONL 数据集路径，配合 `--optimize` 或 `--annotate` 使用
 - `--no-resume` — 跳过断点续跑提示，直接重新开始（适用于非交互环境）
 - `--ckpt <path>` — 从 checkpoint 恢复并继续
 - `--ckpt-dir <dir>` — 指定 checkpoint 存储目录（默认 `./ckpt`）

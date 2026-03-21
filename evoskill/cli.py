@@ -132,14 +132,14 @@ class ChatCLI:
 
         self._console.print(
             Panel(
-                f"[bold]Evo-Framework Chat[/bold]\n"
+                f"[bold]EvoSkill Chat[/bold]\n"
                 f"Skill: [cyan]{self._skill.name}[/cyan] "
                 f"({self._skill.version})\n"
                 f"Model: [cyan]{self._config.llm.model}[/cyan]\n"
                 f"Built-in tools: [cyan]{', '.join(sorted(self._builtin_tools))}[/cyan]\n\n"
                 f"[dim]输入 / 或 /help 查看命令说明[/dim]"
                 + dpo_tip,
-                title="🧬 Evo",
+                title="🧬 EvoSkill",
                 border_style="bright_blue",
             )
         )
@@ -170,7 +170,15 @@ class ChatCLI:
             full_messages = skill_module.compile_messages(
                 self._skill, self._history
             )
-            full_messages.insert(1, self._tool_guidance_message())
+            # Append tool guidance to the existing system message
+            # (some APIs reject multiple system messages)
+            if full_messages and full_messages[0].role == "system":
+                combined = full_messages[0].content
+                if isinstance(combined, str):
+                    combined += "\n\n" + self._tool_guidance_text()
+                full_messages[0] = Message(role="system", content=combined)
+            else:
+                full_messages.insert(0, Message(role="system", content=self._tool_guidance_text()))
             with self._console.status("[dim]Thinking…[/dim]"):
                 response = self._llm.generate(
                     full_messages,
@@ -517,15 +525,13 @@ class ChatCLI:
         self._pending_images.clear()
         return Message(role="user", content=parts)
 
-    def _tool_guidance_message(self) -> Message:
-        return Message(
-            role="system",
-            content=(
-                "You have built-in local tools: list_dir, read_file, search_repo, write_file, shell. "
-                "For repository or filesystem questions, inspect the real files before answering. "
-                "Prefer list_dir/read_file/search_repo over shell when possible. "
-                "Only use write_file or destructive shell commands when the user explicitly asks for file changes."
-            ),
+    @staticmethod
+    def _tool_guidance_text() -> str:
+        return (
+            "You have built-in local tools: list_dir, read_file, search_repo, write_file, shell. "
+            "For repository or filesystem questions, inspect the real files before answering. "
+            "Prefer list_dir/read_file/search_repo over shell when possible. "
+            "Only use write_file or destructive shell commands when the user explicitly asks for file changes."
         )
 
     def _on_tool_event(self, event: str, payload: dict) -> None:

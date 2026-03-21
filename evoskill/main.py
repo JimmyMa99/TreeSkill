@@ -128,6 +128,17 @@ def main(argv: list[str] | None = None) -> None:
         help="Run APO optimization on stored traces instead of starting chat.",
     )
     parser.add_argument(
+        "--annotate",
+        action="store_true",
+        help="Run human-in-the-loop annotation on a dataset. "
+        "Requires --dataset. Use with --auto/--manual to set initial judge mode.",
+    )
+    parser.add_argument(
+        "--manual",
+        action="store_true",
+        help="Start annotation in manual (human) judge mode. Default is auto.",
+    )
+    parser.add_argument(
         "--ckpt",
         default=None,
         help="Restore from a checkpoint path (e.g. ckpt/writing-assistant_v1.2_20260306_140000).",
@@ -280,6 +291,37 @@ def main(argv: list[str] | None = None) -> None:
             f"({loaded_skill.version} → {new_skill.version})"
         )
         console.print(f"[dim]Checkpoint saved → {ckpt_path}[/dim]")
+        sys.exit(0)
+
+    # --- Annotate mode ---
+    if args.annotate:
+        if not args.dataset:
+            console.print("[red]--annotate requires --dataset <path>[/red]")
+            sys.exit(1)
+
+        from evoskill.annotate import AnnotateCLI
+        from evoskill.dataset import DataLoader
+
+        llm = LLMClient(config)
+        dataset = DataLoader(args.dataset)
+        storage = TraceStorage(config.storage)
+
+        annotator = AnnotateCLI(
+            config, llm, loaded_skill, dataset, storage,
+            auto=not args.manual,
+        )
+        traces = annotator.run()
+
+        dpo_count = sum(1 for t in traces if t.feedback and t.feedback.correction)
+        console.print(
+            f"\n[green]✓[/green] Annotation complete: {len(traces)} traces, "
+            f"{dpo_count} DPO pairs"
+        )
+        if dpo_count:
+            console.print(
+                f"[dim]Use --optimize --dataset to run APO, "
+                f"or /export-dpo in chat mode to export DPO data.[/dim]"
+            )
         sys.exit(0)
 
     # --- Chat mode ---
