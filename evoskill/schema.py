@@ -38,8 +38,26 @@ class ImageContent(BaseModel):
     image_url: ImageURL
 
 
+class InputAudio(BaseModel):
+    """Inner payload for an audio content part."""
+
+    data: str  # base64-encoded audio
+    format: str = "wav"  # wav, mp3, etc.
+
+
+class AudioContent(BaseModel):
+    """An input_audio content part (for speech models).
+
+    Follows OpenAI's ``input_audio`` content part format.
+    Requires audio-capable models (e.g. gpt-4o-audio-preview).
+    """
+
+    type: Literal["input_audio"] = "input_audio"
+    input_audio: InputAudio
+
+
 # Discriminated union keyed on `type`
-ContentPart = Union[TextContent, ImageContent]
+ContentPart = Union[TextContent, ImageContent, AudioContent]
 
 
 # ---------------------------------------------------------------------------

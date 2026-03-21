@@ -127,6 +127,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Directory for storing checkpoints (default: ./ckpt).",
     )
     parser.add_argument(
+        "--dataset",
+        default=None,
+        help="Path to a ChatML JSONL dataset file. Used with --optimize to "
+        "auto-evaluate the skill and generate traces before running APO.",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging.",
@@ -179,9 +185,32 @@ def main(argv: list[str] | None = None) -> None:
     # --- Optimize mode ---
     if args.optimize:
         llm = LLMClient(config)
-        storage = TraceStorage(config.storage)
         engine = APOEngine(config, llm)
-        traces = storage.get_feedback_samples()
+
+        if args.dataset:
+            # Dataset-driven evaluation → APO pipeline
+            from evoskill.dataset import DataLoader
+            from evoskill.evaluator import Evaluator
+
+            dataset = DataLoader(args.dataset)
+            evaluator = Evaluator(config, llm)
+
+            console.print(
+                f"[bold]Evaluating[/bold] {len(dataset)} samples "
+                f"from {args.dataset} …"
+            )
+            traces = evaluator.evaluate(loaded_skill, dataset)
+            scored = [t for t in traces if t.feedback is not None]
+            avg = sum(t.feedback.score for t in scored) / len(scored) if scored else 0
+            console.print(
+                f"[dim]Evaluation: {len(scored)} scored, "
+                f"avg_score={avg:.2f}[/dim]"
+            )
+        else:
+            # Legacy: load traces from storage
+            storage = TraceStorage(config.storage)
+            traces = storage.get_feedback_samples()
+
         if not traces:
             console.print("[yellow]No feedback traces found — nothing to optimize.[/yellow]")
             sys.exit(0)
