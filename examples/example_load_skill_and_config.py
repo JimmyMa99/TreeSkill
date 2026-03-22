@@ -63,12 +63,12 @@ def example_1_load_config_and_skill():
     # Method 2: 从 .env fileLoad（自动）
     # 只需要在项目根目录Create .env file，GlobalConfig 会自动读取
     # .env Example：
-    #   EVO_LLM_API_KEY=your-key
-    #   EVO_LLM_BASE_URL=https://api.siliconflow.cn/v1
-    #   EVO_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
+    #   TREE_LLM_API_KEY=your-key
+    #   TREE_LLM_BASE_URL=https://api.siliconflow.cn/v1
+    #   TREE_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 
     # Method 3: 从环境变量Load（最高优先级）
-    # export EVO_LLM_API_KEY="your-key"
+    # export TREE_LLM_API_KEY="your-key"
     # config = GlobalConfig()  # 会自动读取环境变量
 
     print("\n" + "-"*60)

@@ -57,9 +57,9 @@ cp demo/example/config.yaml my-config.yaml
 或用环境变量：
 
 ```env
-EVO_LLM_API_KEY=your-api-key
-EVO_LLM_BASE_URL=https://api.siliconflow.cn/v1
-EVO_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
+TREE_LLM_API_KEY=your-api-key
+TREE_LLM_BASE_URL=https://api.siliconflow.cn/v1
+TREE_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
 ### 2. 启动
@@ -296,17 +296,17 @@ treeskill/
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `EVO_LLM_API_KEY` | — | API 密钥 |
-| `EVO_LLM_BASE_URL` | `https://api.openai.com/v1` | API 地址 |
-| `EVO_LLM_MODEL` | `gpt-4o` | 聊天模型 |
-| `EVO_LLM_JUDGE_MODEL` | `gpt-4o` | Judge 模型（计算梯度 + 评分） |
-| `EVO_LLM_TEMPERATURE` | `0.7` | 生成温度 |
-| `EVO_STORAGE_TRACE_PATH` | `./data/traces.jsonl` | Trace 路径 |
-| `EVO_STORAGE_SKILL_PATH` | `./skills` | Skill 目录 |
-| `EVO_APO_GRADIENT_ACCUMULATION_STEPS` | `5` | 每次梯度计算的反馈样本数 |
-| `EVO_APO_BEAM_WIDTH` | `1` | Beam 宽度（1=单轨，>1=beam search） |
-| `EVO_APO_BRANCH_FACTOR` | `2` | 每个 parent 生成的候选数 |
-| `EVO_APO_BEAM_ROUNDS` | `3` | Beam search 轮数 |
+| `TREE_LLM_API_KEY` | — | API 密钥 |
+| `TREE_LLM_BASE_URL` | `https://api.openai.com/v1` | API 地址 |
+| `TREE_LLM_MODEL` | `gpt-4o` | 聊天模型 |
+| `TREE_LLM_JUDGE_MODEL` | `gpt-4o` | Judge 模型（计算梯度 + 评分） |
+| `TREE_LLM_TEMPERATURE` | `0.7` | 生成温度 |
+| `TREE_STORAGE_TRACE_PATH` | `./data/traces.jsonl` | Trace 路径 |
+| `TREE_STORAGE_SKILL_PATH` | `./skills` | Skill 目录 |
+| `TREE_APO_GRADIENT_ACCUMULATION_STEPS` | `5` | 每次梯度计算的反馈样本数 |
+| `TREE_APO_BEAM_WIDTH` | `1` | Beam 宽度（1=单轨，>1=beam search） |
+| `TREE_APO_BRANCH_FACTOR` | `2` | 每个 parent 生成的候选数 |
+| `TREE_APO_BEAM_ROUNDS` | `3` | Beam search 轮数 |
 
 完整配置模版：[`demo/example/config.yaml`](./demo/example/config.yaml)
 

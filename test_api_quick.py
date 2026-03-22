@@ -8,8 +8,8 @@ from tresskill import OpenAIAdapter
 load_dotenv()
 
 # 创建 adapter
-api_key = os.getenv('EVO_LLM_API_KEY')
-base_url = os.getenv('EVO_LLM_BASE_URL')
+api_key = os.getenv('TREE_LLM_API_KEY')
+base_url = os.getenv('TREE_LLM_BASE_URL')
 
 print(f"API Key: {api_key[:20]}...")
 print(f"Base URL: {base_url}")

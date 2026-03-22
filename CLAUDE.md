@@ -128,10 +128,10 @@ Tree optimization (bottom-up):
 Priority: Environment variables > `.env` > YAML config > defaults
 
 ```bash
-EVO_LLM_API_KEY=...
-EVO_LLM_BASE_URL=https://api.siliconflow.cn/v1
-EVO_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
-EVO_LLM_JUDGE_MODEL=Qwen/Qwen2.5-14B-Instruct
+TREE_LLM_API_KEY=...
+TREE_LLM_BASE_URL=https://api.siliconflow.cn/v1
+TREE_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
+TREE_LLM_JUDGE_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
 Config template: `demo/example/config.yaml`

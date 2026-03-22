@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Verification script for checking whether the evoskill package is installed
+Verification script for checking whether the treeskill package is installed
 and imported correctly.
 
 Usage:
@@ -113,15 +113,15 @@ def test_adapter_imports():
 
 
 def test_backward_compatibility():
-    """Test backward compatibility through direct evoskill imports."""
+    """Test backward compatibility through direct treeskill imports."""
     print("\n" + "=" * 60)
-    print("Test 4: Direct evoskill import")
+    print("Test 4: Direct treeskill import")
     print("=" * 60)
 
     try:
         from treeskill import TextPrompt, registry
 
-        print("✅ evoskill imported successfully")
+        print("✅ treeskill imported successfully")
 
         prompt = TextPrompt(content="Import test")
         print(f"✅ Object creation succeeded: {prompt.content[:20]}...")
@@ -185,7 +185,7 @@ def test_legacy_imports():
 
 def main():
     print("\n" + "🔍 " * 20)
-    print("evoskill package verification script")
+    print("treeskill package verification script")
     print("🔍 " * 20 + "\n")
 
     results = []
@@ -215,7 +215,7 @@ def main():
     print("=" * 60)
 
     if passed == total:
-        print("\n🎉 All tests passed! The evoskill package is installed and configured correctly.")
+        print("\n🎉 All tests passed! The treeskill package is installed and configured correctly.")
         print("\nNext steps:")
         print("  1. Run tests: pytest tests/test_*.py")
         print("  2. View docs: cat docs/RENAME_COMPLETE.md")

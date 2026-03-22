@@ -283,10 +283,10 @@ for prompt in prompts:
 OPENAI_API_KEY=sk-...
 
 # 或使用OpenAI兼容API
-EVO_LLM_API_KEY=sk-...
-EVO_LLM_BASE_URL=https://api.siliconflow.cn/v1
-EVO_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
-EVO_LLM_JUDGE_MODEL=Qwen/Qwen2.5-72B-Instruct
+TREE_LLM_API_KEY=sk-...
+TREE_LLM_BASE_URL=https://api.siliconflow.cn/v1
+TREE_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
+TREE_LLM_JUDGE_MODEL=Qwen/Qwen2.5-72B-Instruct
 ```
 
 ```python
@@ -297,9 +297,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 adapter = OpenAIAdapter(
-    model=os.getenv("EVO_LLM_MODEL"),
-    api_key=os.getenv("EVO_LLM_API_KEY"),
-    base_url=os.getenv("EVO_LLM_BASE_URL"),
+    model=os.getenv("TREE_LLM_MODEL"),
+    api_key=os.getenv("TREE_LLM_API_KEY"),
+    base_url=os.getenv("TREE_LLM_BASE_URL"),
 )
 ```
 

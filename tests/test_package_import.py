@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 
-def test_import_evoskill_without_optional_modules():
+def test_import_treeskill_without_optional_modules():
     repo_root = Path(__file__).resolve().parent.parent
     result = subprocess.run(
         [sys.executable, "-c", "import treeskill"],

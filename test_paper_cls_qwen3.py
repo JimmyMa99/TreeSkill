@@ -122,8 +122,8 @@ def main():
 
     # Raw OpenAI client for classification (Qwen3-8B)
     client = openai.OpenAI(
-        api_key=os.getenv("EVO_LLM_API_KEY"),
-        base_url=os.getenv("EVO_LLM_BASE_URL"),
+        api_key=os.getenv("TREE_LLM_API_KEY"),
+        base_url=os.getenv("TREE_LLM_BASE_URL"),
     )
 
     # APOEngine with judge model (Qwen2.5-72B)

@@ -75,8 +75,8 @@ llm:
 环境变量：
 
 ```bash
-EVO_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
-EVO_LLM_OPTIMIZER_MODEL=claude-sonnet-4-20250514
+TREE_LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
+TREE_LLM_OPTIMIZER_MODEL=claude-sonnet-4-20250514
 ```
 
 ### 代码改动

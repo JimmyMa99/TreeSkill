@@ -32,8 +32,8 @@ for i, test_papers:
     
     adapter = OpenAIAdapter(
         model="Qwen/Qwen2.5-14B-Instruct",
-        api_key=os.getenv("EVO_LLM_API_KEY"),
-        base_url=os.getenv("EVO_LLM_BASE_URL"),
+        api_key=os.getenv("TREE_LLM_API_KEY"),
+        base_url=os.getenv("TREE_LLM_BASE_URL"),
     )
     
     result = adapter.generate_prompt(

@@ -14,7 +14,7 @@
 #### 优先级（从高到低）
 
 ```
-环境变量 (EVO_*) > .env 文件 > YAML 配置文件 > Pydantic 默认值
+环境变量 (TREE_*) > .env 文件 > YAML 配置文件 > Pydantic 默认值
 ```
 
 #### 配置文件结构
@@ -225,9 +225,9 @@ __all__ = [
 
 ```bash
 # 1. 配置 API
-export EVO_LLM_API_KEY="your-key"
-export EVO_LLM_BASE_URL="https://api.siliconflow.cn/v1"
-export EVO_LLM_MODEL="Qwen/Qwen2.5-14B-Instruct"
+export TREE_LLM_API_KEY="your-key"
+export TREE_LLM_BASE_URL="https://api.siliconflow.cn/v1"
+export TREE_LLM_MODEL="Qwen/Qwen2.5-14B-Instruct"
 
 # 2. 创建 config.yaml（可选）
 cp demo/example/config.yaml my-config.yaml
@@ -282,7 +282,7 @@ save_skill(skill, "skills/my-skill-v1.1.yaml")
 
 **推荐**: 环境变量
 ```bash
-export EVO_LLM_API_KEY="your-api-key"
+export TREE_LLM_API_KEY="your-api-key"
 ```
 
 ### Q2: 如何切换不同的 LLM？

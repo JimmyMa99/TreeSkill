@@ -28,9 +28,9 @@ def _run_siliconflow_basic():
     print("=" * 60)
 
     # Get SiliconFlow credentials from .env
-    api_key = os.getenv("EVO_LLM_API_KEY")
-    base_url = os.getenv("EVO_LLM_BASE_URL")
-    model = os.getenv("EVO_LLM_MODEL", "Qwen/Qwen2.5-14B-Instruct")
+    api_key = os.getenv("TREE_LLM_API_KEY")
+    base_url = os.getenv("TREE_LLM_BASE_URL")
+    model = os.getenv("TREE_LLM_MODEL", "Qwen/Qwen2.5-14B-Instruct")
 
     if not api_key or not base_url:
         print("❌ SiliconFlow credentials not found in .env")
@@ -84,15 +84,15 @@ def test_siliconflow_gradient():
     print("=" * 60)
 
     # Get credentials
-    api_key = os.getenv("EVO_LLM_API_KEY")
-    base_url = os.getenv("EVO_LLM_BASE_URL")
-    model = os.getenv("EVO_LLM_MODEL")
+    api_key = os.getenv("TREE_LLM_API_KEY")
+    base_url = os.getenv("TREE_LLM_BASE_URL")
+    model = os.getenv("TREE_LLM_MODEL")
 
     if not all([api_key, base_url, model]):
         print("❌ Missing credentials")
         return
 
-    judge_model = os.getenv("EVO_LLM_JUDGE_MODEL", model)
+    judge_model = os.getenv("TREE_LLM_JUDGE_MODEL", model)
 
     # Create adapter
     adapter = OpenAIAdapter(
@@ -154,9 +154,9 @@ def test_siliconflow_context():
     print("Test 3: Generation with Context (SiliconFlow)")
     print("=" * 60)
 
-    api_key = os.getenv("EVO_LLM_API_KEY")
-    base_url = os.getenv("EVO_LLM_BASE_URL")
-    model = os.getenv("EVO_LLM_MODEL")
+    api_key = os.getenv("TREE_LLM_API_KEY")
+    base_url = os.getenv("TREE_LLM_BASE_URL")
+    model = os.getenv("TREE_LLM_MODEL")
 
     if not all([api_key, base_url, model]):
         print("❌ Missing credentials")
