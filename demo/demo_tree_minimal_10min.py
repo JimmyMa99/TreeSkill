@@ -15,6 +15,7 @@ import logging
 import os
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List
 
@@ -48,6 +49,7 @@ TRAIN_PER_CAT = 8
 TEST_PER_CAT = 4
 NUM_ROUNDS = 2
 NUM_CANDIDATES = 2
+MAX_WORKERS = 8
 OUTPUT_DIR = Path("demo/outputs/tree-minimal-10min")
 
 # 较弱的 baseline — 有类别名但缺关键词提示，留出优化空间
@@ -111,7 +113,11 @@ def classify(client: openai.OpenAI, prompt: str, question: str) -> str:
 
 
 def evaluate(client: openai.OpenAI, prompt: str, data: list, label: str = "") -> float:
-    correct = sum(1 for item in data if classify(client, prompt, item["question"]) == item["answer"])
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = {pool.submit(classify, client, prompt, item["question"]): item for item in data}
+        correct = sum(
+            1 for f in as_completed(futures) if f.result() == futures[f]["answer"]
+        )
     acc = correct / len(data) if data else 0
     logger.info(f"  [{label}] accuracy: {acc:.1%} ({correct}/{len(data)})")
     return acc
@@ -123,8 +129,7 @@ def collect_traces(
     data: list,
     node_path: str = "paper-classifier",
 ) -> List[Trace]:
-    traces = []
-    for item in data:
+    def _classify_item(item):
         pred = classify(client, prompt, item["question"])
         true_label = item["answer"]
         t = Trace(
@@ -140,7 +145,10 @@ def collect_traces(
             )
         else:
             t.feedback = Feedback(score=1.0)
-        traces.append(t)
+        return t
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        traces = list(pool.map(_classify_item, data))
     return traces
 
 
