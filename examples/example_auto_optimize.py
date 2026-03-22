@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     ConversationExperience,
     CompositeFeedback,
@@ -17,8 +17,8 @@ from evoskill.core import (
     OptimizerConfig,
     AutoValidator,
 )
-from evoskill.adapters import OpenAIAdapter
-from evoskill.tools import tool, tool_registry
+from treeskill.adapters import OpenAIAdapter
+from treeskill.tools import tool, tool_registry
 
 
 # ===========================================================================

@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill import (
+from treeskill import (
     OpenAIAdapter,
     TreeAwareOptimizer,
     TreeOptimizerConfig,
@@ -23,8 +23,8 @@ from evoskill import (
     ConversationExperience,
     CompositeFeedback,
 )
-from evoskill.schema import Skill, SkillMeta
-from evoskill.skill_tree import SkillNode
+from treeskill.schema import Skill, SkillMeta
+from treeskill.skill_tree import SkillNode
 
 logging.basicConfig(
     level=logging.INFO,
@@ -117,13 +117,13 @@ def main():
     logger.info("="*60)
 
     # Create适配器
-    api_key = os.getenv("EVO_LLM_API_KEY")
-    base_url = os.getenv("EVO_LLM_BASE_URL", "https://api.siliconflow.cn/v1")
+    api_key = os.getenv("TREE_LLM_API_KEY")
+    base_url = os.getenv("TREE_LLM_BASE_URL", "https://api.siliconflow.cn/v1")
 
     judge_model = "Qwen/Qwen2.5-72B-Instruct"
 
     if not api_key:
-        logger.error("❌ 请Set EVO_LLM_API_KEY")
+        logger.error("❌ 请Set TREE_LLM_API_KEY")
         return
 
     judge_adapter = OpenAIAdapter(model=judge_model, api_key=api_key, base_url=base_url)

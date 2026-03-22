@@ -1,6 +1,6 @@
 # Tree Optimization 最佳实践 — 论文分类 Demo
 
-本文档以一个 10 分钟可跑完的最小化 demo 为例，展示如何使用 EvoSkill 的树优化功能。
+本文档以一个 10 分钟可跑完的最小化 demo 为例，展示如何使用 TreeSkill 的树优化功能。
 
 对应代码: [`demo/demo_tree_minimal_10min.py`](../demo/demo_tree_minimal_10min.py)
 

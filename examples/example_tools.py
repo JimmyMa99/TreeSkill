@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill.tools import (
+from treeskill.tools import (
     tool,
     tool_registry,
     create_http_tool,
@@ -168,8 +168,8 @@ tools:
 def example_use_in_optimizer():
     """在优化Flow中使用工具"""
 
-    from evoskill.core import TextPrompt, ConversationExperience, CompositeFeedback
-    from evoskill.core.experience import FeedbackType
+    from treeskill.core import TextPrompt, ConversationExperience, CompositeFeedback
+    from treeskill.core.experience import FeedbackType
 
     # 假设我们有一个数学助手，需要使用拉普拉斯变换工具
     prompt = TextPrompt(

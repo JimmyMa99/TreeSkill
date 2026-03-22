@@ -11,7 +11,7 @@
 
 **严重程度**: P0 (致命)
 
-**位置**: `evoskill/core/tree_optimizer.py:243-268`
+**位置**: `treeskill/core/tree_optimizer.py:243-268`
 
 **问题**:
 - 配置了 `max_tree_depth=3`，但实际达到 4 层深度
@@ -51,7 +51,7 @@ if self.config.auto_split:
 
 **严重程度**: P0 (致命)
 
-**位置**: `evoskill/core/tree_optimizer.py:688-689`
+**位置**: `treeskill/core/tree_optimizer.py:688-689`
 
 **问题**:
 - `_collect_node_metrics` 方法中，找不到相关 experience 时使用**所有 experiences** 作为 fallback
@@ -94,7 +94,7 @@ if not relevant_experiences:
 
 **严重程度**: P1 (重要)
 
-**位置**: `evoskill/core/tree_optimizer.py:376-379`
+**位置**: `treeskill/core/tree_optimizer.py:376-379`
 
 **问题**:
 - 分裂提示词没有强调分裂的代价
@@ -141,7 +141,7 @@ DO NOT split if:
 
 **严重程度**: P0 (致命)
 
-**位置**: `evoskill/skill_tree.py:48-81`
+**位置**: `treeskill/skill_tree.py:48-81`
 
 **问题**:
 - SkillNode 类没有 `depth` 属性
@@ -242,7 +242,7 @@ python demo/demo_qwen3_8b_tree.py  # 3轮，20条/轮
 ## 📝 相关文件
 
 - 实验报告: `demo/EXPERIMENT_5ROUNDS_ISSUES.md`
-- 修复代码: `evoskill/core/tree_optimizer.py`
+- 修复代码: `treeskill/core/tree_optimizer.py`
 - 测试脚本: `demo/demo_qwen3_8b_tree.py`
 
 ---

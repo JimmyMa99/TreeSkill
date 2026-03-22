@@ -22,7 +22,7 @@ def test_core_imports():
     print("=" * 60)
 
     try:
-        from evoskill.core import (
+        from treeskill.core import (
             OptimizablePrompt,
             TextPrompt,
             MultimodalPrompt,
@@ -53,7 +53,7 @@ def test_registry():
     print("=" * 60)
 
     try:
-        from evoskill import registry, adapter, hook, ComponentMeta
+        from treeskill import registry, adapter, hook, ComponentMeta
 
         print("✅ Registry imported successfully")
         print(f"   - Registered adapters: {list(registry.list_adapters().keys())}")
@@ -88,7 +88,7 @@ def test_adapter_imports():
     try:
         # Try importing adapters.
         try:
-            from evoskill import OpenAIAdapter
+            from treeskill import OpenAIAdapter
             print("✅ OpenAIAdapter imported successfully")
         except ImportError as e:
             if "tiktoken" in str(e):
@@ -97,7 +97,7 @@ def test_adapter_imports():
                 raise
 
         try:
-            from evoskill import AnthropicAdapter
+            from treeskill import AnthropicAdapter
             print("✅ AnthropicAdapter imported successfully")
         except ImportError as e:
             if "anthropic" in str(e):
@@ -119,7 +119,7 @@ def test_backward_compatibility():
     print("=" * 60)
 
     try:
-        from evoskill import TextPrompt, registry
+        from treeskill import TextPrompt, registry
 
         print("✅ evoskill imported successfully")
 
@@ -140,15 +140,15 @@ def test_package_info():
     print("=" * 60)
 
     try:
-        import evoskill
+        import treeskill
 
-        print(f"✅ Package name: {evoskill.__name__}")
-        print(f"✅ Version: {evoskill.__version__}")
-        print(f"✅ Author: {evoskill.__author__}")
+        print(f"✅ Package name: {treeskill.__name__}")
+        print(f"✅ Version: {treeskill.__version__}")
+        print(f"✅ Author: {treeskill.__author__}")
 
         # Check __all__.
-        print(f"✅ Exported symbol count: {len(evoskill.__all__)}")
-        print(f"   Main symbols: {', '.join(evoskill.__all__[:10])}...")
+        print(f"✅ Exported symbol count: {len(treeskill.__all__)}")
+        print(f"   Main symbols: {', '.join(treeskill.__all__[:10])}...")
 
         return True
     except Exception as e:
@@ -168,7 +168,7 @@ def test_legacy_imports():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
-            from evoskill import Skill, Trace, Message, SkillTree
+            from treeskill import Skill, Trace, Message, SkillTree
 
             print("✅ Legacy API imports succeeded")
             print("   - Skill")
@@ -219,7 +219,7 @@ def main():
         print("\nNext steps:")
         print("  1. Run tests: pytest tests/test_*.py")
         print("  2. View docs: cat docs/RENAME_COMPLETE.md")
-        print("  3. Start using it: from evoskill import TextPrompt")
+        print("  3. Start using it: from treeskill import TextPrompt")
         return 0
     else:
         print("\n⚠️  Some tests failed. Please check dependency installation:")

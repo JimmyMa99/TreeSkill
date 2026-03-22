@@ -5,7 +5,7 @@ import types
 from pathlib import Path
 
 for missing_module, attrs in {
-    "evoskill.script": {
+    "treeskill.script": {
         "ScriptValidator": object,
         "ScriptValidationResult": object,
         "ScriptIssue": object,
@@ -15,14 +15,14 @@ for missing_module, attrs in {
         "save_script": lambda *args, **kwargs: None,
         "load_script_as_tools": lambda *args, **kwargs: {},
     },
-    "evoskill.memory": {
+    "treeskill.memory": {
         "MEMORY_FILE": "memory.json",
         "MemoryType": object,
         "MemoryEntry": object,
         "MemoryStore": object,
         "MemoryCompiler": object,
     },
-    "evoskill.agenda": {
+    "treeskill.agenda": {
         "AgendaManager": object,
         "compile_agenda_context": lambda *args, **kwargs: "",
         "parse_due": lambda *args, **kwargs: None,
@@ -33,10 +33,10 @@ for missing_module, attrs in {
         setattr(module, name, value)
     sys.modules.setdefault(missing_module, module)
 
-from evoskill.cli import ChatCLI
-from evoskill.config import GlobalConfig
-from evoskill.schema import Feedback, Message, Skill, Trace
-from evoskill.storage import TraceStorage
+from treeskill.cli import ChatCLI
+from treeskill.config import GlobalConfig
+from treeskill.schema import Feedback, Message, Skill, Trace
+from treeskill.storage import TraceStorage
 
 
 def _make_cli(tmp_path: Path) -> ChatCLI:

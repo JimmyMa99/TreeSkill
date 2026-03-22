@@ -11,13 +11,13 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     ConversationExperience,
     CompositeFeedback,
     MultimodalPrompt,
 )
-from evoskill.adapters.anthropic import (
+from treeskill.adapters.anthropic import (
     AnthropicAdapter,
     create_claude_35_sonnet,
     create_claude_35_haiku,

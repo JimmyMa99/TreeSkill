@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from evoskill.core.base_adapter import BaseModelAdapter
-from evoskill.core.abc import OptimizablePrompt, Experience
+from treeskill.core.base_adapter import BaseModelAdapter
+from treeskill.core.abc import OptimizablePrompt, Experience
 
 
 class MockAdapter(BaseModelAdapter):
@@ -94,7 +94,7 @@ class MockAdapter(BaseModelAdapter):
 
 # Example usage
 if __name__ == "__main__":
-    from evoskill.core import (
+    from treeskill.core import (
         TextPrompt,
         ConversationExperience,
         CompositeFeedback,

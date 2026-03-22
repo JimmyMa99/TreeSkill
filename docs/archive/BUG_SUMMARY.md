@@ -1,4 +1,4 @@
-# 🎯 EvoSkill Bug 检查总结
+# 🎯 TreeSkill Bug 检查总结
 
 **检查时间**: 2026-03-19
 **检查范围**: 基于 5 轮实验失败分析
@@ -145,8 +145,8 @@ Round 3: 8-12 节点 ✅
 
 ### 1. 语法检查
 ```bash
-python3 -m py_compile evoskill/core/tree_optimizer.py
-python3 -m py_compile evoskill/skill_tree.py
+python3 -m py_compile treeskill/core/tree_optimizer.py
+python3 -m py_compile treeskill/skill_tree.py
 ```
 **状态**: ✅ 通过
 
@@ -200,12 +200,12 @@ samples_per_round = 20  # 从 14 提高到 20
 
 ## 📁 修改的文件
 
-1. ✅ `evoskill/core/tree_optimizer.py`
+1. ✅ `treeskill/core/tree_optimizer.py`
    - 添加深度检查
    - 修复 usage_count 计算
    - 改进分裂提示词
 
-2. ✅ `evoskill/skill_tree.py`
+2. ✅ `treeskill/skill_tree.py`
    - 保持原样（不需要添加 depth 属性）
 
 3. ✅ `BUGFIX_REPORT_20260319.md`

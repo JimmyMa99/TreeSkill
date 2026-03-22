@@ -50,7 +50,7 @@ verbose: false
 #### 在代码中使用
 
 ```python
-from evoskill import GlobalConfig
+from treeskill import GlobalConfig
 
 # 方式 1: 从 YAML 加载
 config = GlobalConfig.from_yaml("config.yaml")
@@ -87,7 +87,7 @@ config:
 #### 使用方法
 
 ```python
-from evoskill import load_skill, save_skill, compile_messages
+from treeskill import load_skill, save_skill, compile_messages
 
 # 加载 skill
 skill = load_skill("skills/my-skill.yaml")
@@ -123,7 +123,7 @@ python examples/example_load_skill_and_config.py
 **输出示例**:
 ```
 ============================================================
-EvoSkill - 加载已存储 Skill 并使用 Config 示例
+TreeSkill - 加载已存储 Skill 并使用 Config 示例
 ============================================================
 
 ✓ 从 demo/example/config.yaml 加载配置
@@ -163,7 +163,7 @@ EvoSkill - 加载已存储 Skill 并使用 Config 示例
 
 #### 添加 MockAdapter 导出
 
-**文件**: `evoskill/__init__.py`
+**文件**: `treeskill/__init__.py`
 
 ```python
 elif name == "MockAdapter":
@@ -179,10 +179,10 @@ elif name == "MockAdapter":
 
 #### 添加 Skill 管理函数导出
 
-**文件**: `evoskill/__init__.py`
+**文件**: `treeskill/__init__.py`
 
 ```python
-from evoskill.skill import (
+from treeskill.skill import (
     load as load_skill,
     save as save_skill,
     compile_messages,
@@ -208,7 +208,7 @@ __all__ = [
 
 ### 修改文件
 
-1. **`evoskill/__init__.py`**
+1. **`treeskill/__init__.py`**
    - 添加 `MockAdapter` 延迟导入
    - 添加 `load_skill`, `save_skill`, `compile_messages` 导出
    - 更新 `__all__` 列表
@@ -245,7 +245,7 @@ python examples/example_load_skill_and_config.py
 
 ```python
 #!/usr/bin/env python3
-from evoskill import (
+from treeskill import (
     GlobalConfig,
     load_skill,
     save_skill,

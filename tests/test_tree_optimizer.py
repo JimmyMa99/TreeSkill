@@ -19,18 +19,18 @@ from unittest.mock import Mock, MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill.core.tree_optimizer import (
+from treeskill.core.tree_optimizer import (
     TreeAwareOptimizer,
     TreeOptimizerConfig,
     TreeOptimizationResult,
 )
-from evoskill.core.prompts import TextPrompt
-from evoskill.core.experience import (
+from treeskill.core.prompts import TextPrompt
+from treeskill.core.experience import (
     ConversationExperience,
     CompositeFeedback,
     FeedbackType,
 )
-from evoskill.core.abc import ModelAdapter, OptimizablePrompt
+from treeskill.core.abc import ModelAdapter, OptimizablePrompt
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +121,7 @@ class MockAdapter(ModelAdapter):
 
     def compute_gradient(self, prompt=None, experiences=None, failures=None, target=None, **kwargs):
         """Mock gradient computation."""
-        from evoskill.core.gradient import SimpleGradient
+        from treeskill.core.gradient import SimpleGradient
         return SimpleGradient(text="Mock gradient: improve clarity")
 
     def apply_gradient(self, prompt=None, gradient=None, **kwargs):
@@ -396,7 +396,7 @@ def test_optimize_tree_integration(tree_optimizer, sample_experiences):
     root.children = {}
 
     # Use a real Skill-like object to avoid Mock subscript issues
-    from evoskill.schema import Skill
+    from treeskill.schema import Skill
     root.skill = Skill(
         name="root",
         system_prompt="You are a helpful assistant.",

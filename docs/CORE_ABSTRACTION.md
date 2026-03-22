@@ -2,7 +2,7 @@
 
 ## 概述
 
-核心抽象层（`evoskill.core`）提供了让框架**模型无关**、**多模态支持**的基础接口。
+核心抽象层（`treeskill.core`）提供了让框架**模型无关**、**多模态支持**的基础接口。
 
 ### 设计原则
 
@@ -20,7 +20,7 @@
 所有可优化的Prompt的基类。
 
 ```python
-from evoskill.core import TextPrompt
+from treeskill.core import TextPrompt
 
 # 创建文本Prompt
 prompt = TextPrompt(
@@ -45,7 +45,7 @@ new_prompt = prompt.bump_version()  # v1.0 -> v1.1
 文本梯度，描述如何改进Prompt。
 
 ```python
-from evoskill.core import SimpleGradient
+from treeskill.core import SimpleGradient
 
 gradient = SimpleGradient(
     text="Prompt太正式了，应该更口语化。",
@@ -60,7 +60,7 @@ print(str(gradient))  # Prompt太正式了，应该更口语化。
 单次交互经验。
 
 ```python
-from evoskill.core import (
+from treeskill.core import (
     ConversationExperience,
     CompositeFeedback,
 )
@@ -88,7 +88,7 @@ if exp_with_feedback.is_failure:
 模型适配器，核心抽象。
 
 ```python
-from evoskill.core import BaseModelAdapter
+from treeskill.core import BaseModelAdapter
 
 class MyModelAdapter(BaseModelAdapter):
     @property
@@ -122,7 +122,7 @@ class MyModelAdapter(BaseModelAdapter):
 ## 完整工作流示例
 
 ```python
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     ConversationExperience,
     CompositeFeedback,
@@ -164,7 +164,7 @@ print(f"新内容: {new_prompt.content}")
 ## 多模态支持
 
 ```python
-from evoskill.core import MultimodalPrompt, MultimodalExperience
+from treeskill.core import MultimodalPrompt, MultimodalExperience
 
 # 创建多模态Prompt
 prompt = MultimodalPrompt(
@@ -210,7 +210,7 @@ Path("experience.jsonl").write_text(json.dumps(exp_data) + "\n")
 ### 添加新的Prompt类型
 
 ```python
-from evoskill.core.abc import OptimizablePrompt
+from treeskill.core.abc import OptimizablePrompt
 
 class MyCustomPrompt(OptimizablePrompt):
     def __init__(self, custom_field: str, **kwargs):
@@ -243,7 +243,7 @@ class MyCustomPrompt(OptimizablePrompt):
 ### 添加新的Feedback类型
 
 ```python
-from evoskill.core.abc import Feedback
+from treeskill.core.abc import Feedback
 
 class MyCustomFeedback(Feedback):
     def __init__(self, custom_metric: float):

@@ -1,15 +1,15 @@
 # 🔄 改名 + 插件化迁移指南
 
-## 改名：evo-framework → evoskill
+## 改名：evo-framework → treeskill
 
 ### 动机
 
-| 维度 | evo-framework | evoskill |
+| 维度 | evo-framework | treeskill |
 |------|--------------|----------|
 | **记忆度** | ⭐⭐ 一般 | ⭐⭐⭐⭐⭐ 很好 |
 | **具体性** | ⭐⭐ 太泛 | ⭐⭐⭐⭐⭐ 明确 |
 | **专业性** | ⭐⭐⭐ 中等 | ⭐⭐⭐⭐⭐ 专业 |
-| **品牌** | evo-framework | `evoskill` ✅ |
+| **品牌** | evo-framework | `treeskill` ✅ |
 
 ---
 
@@ -26,7 +26,7 @@ evo_framework/
 ├── ...
 
 新结构：
-evoskill/              # ✅ 改名
+treeskill/              # ✅ 改名
 ├── __init__.py
 ├── core/              # ✅ 核心抽象层
 ├── adapters/          # ✅ 模型适配器
@@ -35,7 +35,7 @@ evoskill/              # ✅ 改名
 
 # 保留向后兼容
 evo_framework/         # ⚠️ 保留，但弃用
-├── __init__.py        # 导入并重导出 evoskill
+├── __init__.py        # 导入并重导出 treeskill
 ```
 
 ### 1.2 导入迁移
@@ -51,7 +51,7 @@ from evo_framework.llm import LLMClient
 
 ```python
 # 推荐：新API
-from evoskill import TextPrompt, OpenAIAdapter
+from treeskill import TextPrompt, OpenAIAdapter
 
 # 向后兼容：旧API继续工作
 from evo_framework import Skill, Trace  # ⚠️ 弃用但可用
@@ -64,7 +64,7 @@ from evo_framework import Skill, Trace  # ⚠️ 弃用但可用
 ### 2.1 核心概念
 
 ```python
-from evoskill import registry, adapter, optimizer, hook
+from treeskill import registry, adapter, optimizer, hook
 
 # ------------------------------------------------
 # 1. 注册适配器
@@ -115,19 +115,19 @@ def backup_to_s3(skill, path):
 """
 adapters:
   openai:
-    class: evoskill.adapters.openai.OpenAIAdapter
+    class: treeskill.adapters.openai.OpenAIAdapter
     default: true
     config:
       model: gpt-4o-mini
 
   claude:
-    class: evoskill.adapters.anthropic.AnthropicAdapter
+    class: treeskill.adapters.anthropic.AnthropicAdapter
     config:
       model: claude-3-5-sonnet-20241022
 
 optimizers:
   default:
-    class: evoskill.optimizer.TrainFreeOptimizer
+    class: treeskill.optimizer.TrainFreeOptimizer
     config:
       max_steps: 3
 
@@ -139,9 +139,9 @@ hooks:
 """
 
 # 使用
-from evoskill import EvoSkill
+from treeskill import TreeSkill
 
-app = EvoSkill.from_config("config.yaml")
+app = TreeSkill.from_config("config.yaml")
 adapter = app.get_adapter()
 optimizer = app.get_optimizer()
 ```
@@ -165,7 +165,7 @@ optimizer = app.get_optimizer()
 ```python
 # my_optimizer.py
 
-from evoskill import optimizer, TrainFreeOptimizer
+from treeskill import optimizer, TrainFreeOptimizer
 
 @optimizer("aggressive")
 class AggressiveOptimizer(TrainFreeOptimizer):
@@ -200,14 +200,14 @@ optimizer = registry.get_optimizer("aggressive")
 ```python
 # hooks.py
 
-from evoskill import hook
+from treeskill import hook
 import wandb
 import slack_sdk
 
 @hook('after_optimize')
 def log_to_wandb(old_skill, new_skill, gradient):
     """优化后记录到WandB"""
-    wandb.init(project='evoskill')
+    wandb.init(project='treeskill')
     wandb.log({
         'version': new_skill.version,
         'gradient_length': len(str(gradient)),
@@ -238,15 +238,15 @@ def log_error(error, event, callback):
 
 ```bash
 # 1. 重命名目录
-mv evo_framework evoskill
+mv evo_framework treeskill
 
 # 2. 更新 pyproject.toml
 [project]
-name = "evoskill"
+name = "treeskill"
 version = "0.2.0"
 
 [project.scripts]
-evoskill = "evoskill.cli:main"
+treeskill = "treeskill.cli:main"
 
 # 3. 创建向后兼容层
 mkdir evo_framework
@@ -254,12 +254,12 @@ cat > evo_framework/__init__.py << 'EOF'
 """
 Evo-Framework (Legacy)
 
-⚠️ DEPRECATED: Use 'evoskill' instead.
+⚠️ DEPRECATED: Use 'treeskill' instead.
 This module is kept for backward compatibility only.
 """
 
-# Re-export everything from evoskill
-from evoskill import *
+# Re-export everything from treeskill
+from treeskill import *
 EOF
 ```
 
@@ -267,32 +267,32 @@ EOF
 
 ```python
 # 全局替换
-find . -type f -name "*.py" -exec sed -i '' 's/from evo_framework/from evoskill/g' {} \;
-find . -type f -name "*.py" -exec sed -i '' 's/import evo_framework/import evoskill/g' {} \;
+find . -type f -name "*.py" -exec sed -i '' 's/from evo_framework/from treeskill/g' {} \;
+find . -type f -name "*.py" -exec sed -i '' 's/import evo_framework/import treeskill/g' {} \;
 
 # 更新文档
-find . -type f -name "*.md" -exec sed -i '' 's/evo-framework/evoskill/g' {} \;
-find . -type f -name "*.md" -exec sed -i '' 's/evo_framework/evoskill/g' {} \;
+find . -type f -name "*.md" -exec sed -i '' 's/evo-framework/treeskill/g' {} \;
+find . -type f -name "*.md" -exec sed -i '' 's/evo_framework/treeskill/g' {} \;
 ```
 
 ### Step 3: 添加Registry
 
 ```python
-# evoskill/__init__.py
+# treeskill/__init__.py
 
 # Core
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     MultimodalPrompt,
     # ...
 )
 
 # Adapters
-from evoskill.adapters.openai import OpenAIAdapter
-from evoskill.adapters.anthropic import AnthropicAdapter
+from treeskill.adapters.openai import OpenAIAdapter
+from treeskill.adapters.anthropic import AnthropicAdapter
 
 # Registry (新增)
-from evoskill.registry import (
+from treeskill.registry import (
     registry,
     adapter,
     optimizer,
@@ -301,7 +301,7 @@ from evoskill.registry import (
 )
 
 # Main API
-from evoskill.api import EvoSkill
+from treeskill.api import TreeSkill
 
 __all__ = [
     # Core
@@ -316,7 +316,7 @@ __all__ = [
     "hook",
     "ComponentMeta",
     # Main API
-    "EvoSkill",
+    "TreeSkill",
 ]
 ```
 
@@ -325,18 +325,18 @@ __all__ = [
 ```markdown
 # README.md
 
-# EvoSkill: Train-free Prompt Evolution Framework
+# TreeSkill: Train-free Prompt Evolution Framework
 
 ## 安装
 
 \`\`\`bash
-pip install evoskill
+pip install treeskill
 \`\`\`
 
 ## 快速开始
 
 \`\`\`python
-from evoskill import TextPrompt, OpenAIAdapter, registry
+from treeskill import TextPrompt, OpenAIAdapter, registry
 
 # 创建适配器
 adapter = OpenAIAdapter(model="gpt-4o-mini")
@@ -352,7 +352,7 @@ response = adapter.generate(prompt)
 ## 自定义组件
 
 \`\`\`python
-from evoskill import adapter, hook
+from treeskill import adapter, hook
 
 @adapter("my-custom")
 class MyAdapter(BaseModelAdapter):
@@ -378,13 +378,13 @@ python -m build
 twine upload dist/*
 
 # 用户安装
-pip install evoskill
+pip install treeskill
 ```
 
 ### 4.2 版本管理
 
 ```python
-# evoskill/__init__.py
+# treeskill/__init__.py
 
 __version__ = "0.2.0"
 __author__ = "Your Name"
@@ -402,7 +402,7 @@ VERSION_INFO = {
 ## 迁移检查清单
 
 ### 改名 ✅
-- [ ] 重命名 `evo_framework/` → `evoskill/`
+- [ ] 重命名 `evo_framework/` → `treeskill/`
 - [ ] 更新 `pyproject.toml`
 - [ ] 创建向后兼容层 `evo_framework/__init__.py`
 - [ ] 全局替换导入语句
@@ -448,7 +448,7 @@ VERSION_INFO = {
 
 ## 下一步
 
-1. ✅ **改名** → evoskill
+1. ✅ **改名** → treeskill
 2. ✅ **实现Registry** → 插件化
 3. ⏳ **继续优化引擎** → 核心功能
 4. ⏳ **发布PyPI** → 社区使用

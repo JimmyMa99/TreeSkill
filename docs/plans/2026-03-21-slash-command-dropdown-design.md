@@ -4,7 +4,7 @@
 
 ## Context
 
-The current chat loop in `evoskill/cli.py` reads input with `rich.prompt.Prompt.ask()`. That works for plain line input, but it only sees the full string after the user presses Enter. Because of that, slash commands are handled after input submission and there is no hook for interactive suggestions while the user is typing.
+The current chat loop in `treeskill/cli.py` reads input with `rich.prompt.Prompt.ask()`. That works for plain line input, but it only sees the full string after the user presses Enter. Because of that, slash commands are handled after input submission and there is no hook for interactive suggestions while the user is typing.
 
 ## Requirements
 

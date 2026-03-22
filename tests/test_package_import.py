@@ -8,7 +8,7 @@ from pathlib import Path
 def test_import_evoskill_without_optional_modules():
     repo_root = Path(__file__).resolve().parent.parent
     result = subprocess.run(
-        [sys.executable, "-c", "import evoskill"],
+        [sys.executable, "-c", "import treeskill"],
         cwd=repo_root,
         capture_output=True,
         text=True,

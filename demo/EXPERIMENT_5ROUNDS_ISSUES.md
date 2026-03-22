@@ -198,7 +198,7 @@ demo/outputs/demo-qwen3-8b-tree-5rounds/
 #### 1. 修复深度控制
 
 ```python
-# evoskill/core/tree_optimizer.py
+# treeskill/core/tree_optimizer.py
 
 def _should_split_node(self, node: SkillTreeNode) -> bool:
     # 检查深度限制
@@ -253,7 +253,7 @@ Round 1: 6节点 → Round 2: 10-15节点 → Round 3: 8-12节点 ✅
 
 ### 1. 深度控制缺失
 
-**文件**: `evoskill/core/tree_optimizer.py`
+**文件**: `treeskill/core/tree_optimizer.py`
 **方法**: `_auto_split_node()`
 **问题**: 未检查 `node.depth`
 
@@ -264,7 +264,7 @@ Round 1: 6节点 → Round 2: 10-15节点 → Round 3: 8-12节点 ✅
 
 ### 3. 剪枝策略问题
 
-**文件**: `evoskill/core/tree_optimizer.py`
+**文件**: `treeskill/core/tree_optimizer.py`
 **方法**: `_should_prune_node()`, `_prune_node()`
 **问题**:
 - 保护期机制

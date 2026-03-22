@@ -3,10 +3,10 @@
 # ============================================================
 #
 # Usage:
-#   python -m evoskill.main --config demo/example/config.yaml --skill demo/example
+#   python -m treeskill.main --config demo/example/config.yaml --skill demo/example
 #
 # Priority: environment variables > .env file > this YAML > Pydantic defaults
-# Example: if this file sets model: gpt-4o but EVO_LLM_MODEL=xxx is set, the env var wins
+# Example: if this file sets model: gpt-4o but TREE_LLM_MODEL=xxx is set, the env var wins
 #
 # Every field has a default value, so only change what you need.
 # ============================================================

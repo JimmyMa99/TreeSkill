@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 for missing_module, attrs in {
-    "evoskill.script": {
+    "treeskill.script": {
         "ScriptValidator": object,
         "ScriptValidationResult": object,
         "ScriptIssue": object,
@@ -18,14 +18,14 @@ for missing_module, attrs in {
         "save_script": lambda *args, **kwargs: None,
         "load_script_as_tools": lambda *args, **kwargs: {},
     },
-    "evoskill.memory": {
+    "treeskill.memory": {
         "MEMORY_FILE": "memory.json",
         "MemoryType": object,
         "MemoryEntry": object,
         "MemoryStore": object,
         "MemoryCompiler": object,
     },
-    "evoskill.agenda": {
+    "treeskill.agenda": {
         "AgendaManager": object,
         "compile_agenda_context": lambda *args, **kwargs: "",
         "parse_due": lambda *args, **kwargs: None,
@@ -36,7 +36,7 @@ for missing_module, attrs in {
         setattr(module, name, value)
     sys.modules.setdefault(missing_module, module)
 
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     MultimodalPrompt,
     SimpleGradient,
@@ -44,7 +44,7 @@ from evoskill.core import (
     ConversationExperience,
     FeedbackType,
 )
-from evoskill.schema import AudioContent, AudioURL, Message, TextContent
+from treeskill.schema import AudioContent, AudioURL, Message, TextContent
 
 
 def test_text_prompt():

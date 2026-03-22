@@ -10,12 +10,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill.core.prompts import TextPrompt
-from evoskill.core.experience import ConversationExperience, CompositeFeedback, FeedbackType
-from evoskill.core.gradient import SimpleGradient
-from evoskill.core.base_adapter import BaseModelAdapter
-from evoskill.core.optimizer import TrainFreeOptimizer
-from evoskill.core.optimizer_config import OptimizerConfig
+from treeskill.core.prompts import TextPrompt
+from treeskill.core.experience import ConversationExperience, CompositeFeedback, FeedbackType
+from treeskill.core.gradient import SimpleGradient
+from treeskill.core.base_adapter import BaseModelAdapter
+from treeskill.core.optimizer import TrainFreeOptimizer
+from treeskill.core.optimizer_config import OptimizerConfig
 import logging
 
 # Configure logging.

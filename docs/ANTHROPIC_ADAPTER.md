@@ -30,8 +30,8 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 ### 3. 基本使用
 
 ```python
-from evoskill.core import TextPrompt
-from evoskill.adapters.anthropic import AnthropicAdapter
+from treeskill.core import TextPrompt
+from treeskill.adapters.anthropic import AnthropicAdapter
 
 # 创建适配器
 adapter = AnthropicAdapter(model="claude-3-5-sonnet-20241022")
@@ -118,7 +118,7 @@ else:
 ### 3. Vision支持
 
 ```python
-from evoskill.core import MultimodalPrompt
+from treeskill.core import MultimodalPrompt
 
 # 创建多模态Prompt
 prompt = MultimodalPrompt(
@@ -139,7 +139,7 @@ response = adapter.generate(prompt)
 ### 4. 对话上下文
 
 ```python
-from evoskill.core import ConversationExperience
+from treeskill.core import ConversationExperience
 
 # 创建对话历史
 experiences = [
@@ -162,7 +162,7 @@ response = adapter.generate(prompt, context=experiences)
 ### 5. Prompt优化
 
 ```python
-from evoskill.core import CompositeFeedback
+from treeskill.core import CompositeFeedback
 
 # 创建失败经验
 bad_exp = ConversationExperience(
@@ -190,7 +190,7 @@ print(f"优化后: {new_prompt.version}")  # v1.0 → v1.1
 ### 1. 工厂函数
 
 ```python
-from evoskill.adapters.anthropic import (
+from treeskill.adapters.anthropic import (
     create_claude_35_sonnet,
     create_claude_35_haiku,
     create_claude_3_opus,
@@ -429,8 +429,8 @@ actual_tokens = response.usage.input_tokens
 ### 完整示例：多轮对话
 
 ```python
-from evoskill.core import TextPrompt, ConversationExperience
-from evoskill.adapters.anthropic import create_claude_35_sonnet
+from treeskill.core import TextPrompt, ConversationExperience
+from treeskill.adapters.anthropic import create_claude_35_sonnet
 
 # 创建适配器
 adapter = create_claude_35_sonnet()

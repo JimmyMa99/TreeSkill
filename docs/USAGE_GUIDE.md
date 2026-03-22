@@ -1,4 +1,4 @@
-# EvoSkill 使用指南
+# TreeSkill 使用指南
 
 > 如何加载已存储的 Skill 并使用 Config
 > 版本: v0.2.0
@@ -17,7 +17,7 @@
 
 ## 配置系统
 
-EvoSkill 有完整的配置系统，支持三种配置方式，优先级从高到低：
+TreeSkill 有完整的配置系统，支持三种配置方式，优先级从高到低：
 
 ### 优先级
 
@@ -104,7 +104,7 @@ python your_script.py
 ### 在代码中加载配置
 
 ```python
-from evoskill import GlobalConfig
+from treeskill import GlobalConfig
 
 # 方式 1: 从 YAML 加载
 config = GlobalConfig.from_yaml("config.yaml")
@@ -161,7 +161,7 @@ config:
 ### 加载 Skill
 
 ```python
-from evoskill import load as load_skill
+from treeskill import load as load_skill
 
 # 加载 skill
 skill = load_skill("skills/my-skill.yaml")
@@ -175,7 +175,7 @@ print(skill.target)          # "更像真人说话，少套话，有温度"
 ### 保存 Skill
 
 ```python
-from evoskill import save as save_skill
+from treeskill import save as save_skill
 
 # 修改 skill
 skill.version = "v1.1"
@@ -188,7 +188,7 @@ save_skill(skill, "skills/my-skill-v1.1.yaml")
 ### 编译消息
 
 ```python
-from evoskill import compile_messages
+from treeskill import compile_messages
 
 # 准备用户输入
 user_input = [{"role": "user", "content": "帮我写一段关于春天的短文"}]
@@ -212,7 +212,7 @@ messages = compile_messages(skill, user_input)
 ```python
 #!/usr/bin/env python3
 from pathlib import Path
-from evoskill import GlobalConfig, load as load_skill
+from treeskill import GlobalConfig, load as load_skill
 
 # 1. 加载配置
 config = GlobalConfig.from_yaml("config.yaml")
@@ -231,7 +231,7 @@ print(f"版本: {skill.version}")
 
 ```python
 #!/usr/bin/env python3
-from evoskill import (
+from treeskill import (
     GlobalConfig,
     load as load_skill,
     compile_messages,
@@ -267,7 +267,7 @@ save_skill(skill, "skills/my-skill-v1.1.yaml")
 
 ```python
 #!/usr/bin/env python3
-from evoskill import (
+from treeskill import (
     TextPrompt,
     ConversationExperience,
     CompositeFeedback,
@@ -365,7 +365,7 @@ llm:
 或者使用不同的适配器：
 
 ```python
-from evoskill import AnthropicAdapter
+from treeskill import AnthropicAdapter
 
 adapter = AnthropicAdapter(
     api_key=config.llm.api_key.get_secret_value(),

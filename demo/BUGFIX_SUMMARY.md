@@ -131,7 +131,7 @@ collapse_instead_of_prune=True  # ✅ 折叠而非删除
 
 ### 1. Pydantic不可变性修复
 
-**位置**: `evoskill/core/tree_optimizer.py:186-199`
+**位置**: `treeskill/core/tree_optimizer.py:186-199`
 
 **修复前**:
 ```python
@@ -156,7 +156,7 @@ node.skill = updated_skill
 
 ### 2. Optimizer返回值修复
 
-**位置**: `evoskill/core/optimizer.py:170`
+**位置**: `treeskill/core/optimizer.py:170`
 
 **修复前**:
 ```python
@@ -176,7 +176,7 @@ final_prompt = best_prompt if validator else current_prompt
 
 ### 3. 渐进式剪枝实现
 
-**位置**: `evoskill/core/tree_optimizer.py:521-605`
+**位置**: `treeskill/core/tree_optimizer.py:521-605`
 
 **关键代码**:
 ```python
@@ -206,17 +206,17 @@ def analyze_prune_need(node, metrics):
 
 ### 核心文件
 
-1. **`evoskill/core/tree_optimizer.py`**
+1. **`treeskill/core/tree_optimizer.py`**
    - 添加渐进式剪枝逻辑（521-605行）
    - 添加节点年龄追踪（186-199行）
 
-2. **`evoskill/skill_tree.py`**
+2. **`treeskill/skill_tree.py`**
    - SkillNode添加age, usage_count, collapsed字段（30-75行）
 
-3. **`evoskill/core/optimizer.py`**
+3. **`treeskill/core/optimizer.py`**
    - 修复返回值逻辑（170行）
 
-4. **`evoskill/core/base_adapter.py`**
+4. **`treeskill/core/base_adapter.py`**
    - 添加调试日志（382-402行）
 
 ### Demo文件
@@ -321,9 +321,9 @@ def analyze_prune_need(node, metrics):
 - `demo/PROGRESSIVE_PRUNING.md` - 渐进式剪枝完整文档
 
 ### 代码文件
-- `evoskill/core/tree_optimizer.py` - Tree优化器
-- `evoskill/core/optimizer.py` - 基础优化器
-- `evoskill/skill_tree.py` - Skill树定义
+- `treeskill/core/tree_optimizer.py` - Tree优化器
+- `treeskill/core/optimizer.py` - 基础优化器
+- `treeskill/skill_tree.py` - Skill树定义
 
 ### Demo
 - `demo/demo_qwen3_8b.py` - 基础优化

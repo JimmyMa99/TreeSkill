@@ -21,7 +21,7 @@
 ### 1. Python函数工具（最简单）
 
 ```python
-from evoskill.tools import tool, tool_registry
+from treeskill.tools import tool, tool_registry
 
 # 使用装饰器注册
 @tool()
@@ -44,7 +44,7 @@ print(result)  # 1/(s**2 + 1)
 ### 2. HTTP API工具
 
 ```python
-from evoskill.tools import create_http_tool
+from treeskill.tools import create_http_tool
 
 # 创建HTTP工具
 weather_api = create_http_tool(
@@ -65,7 +65,7 @@ print(result)
 ### 3. MCP工具（Model Context Protocol）
 
 ```python
-from evoskill.tools import create_mcp_tool
+from treeskill.tools import create_mcp_tool
 
 # 创建MCP工具
 database_query = create_mcp_tool(
@@ -106,7 +106,7 @@ tools:
 
 **加载**:
 ```python
-from evoskill.tools import tool_registry
+from treeskill.tools import tool_registry
 
 # 从配置文件加载
 tool_registry.load_from_config("config.yaml")
@@ -134,7 +134,7 @@ python examples/example_tools.py
 ### 自定义工具类
 
 ```python
-from evoskill.tools import BaseTool, tool_registry
+from treeskill.tools import BaseTool, tool_registry
 
 class MyCustomTool(BaseTool):
     @property

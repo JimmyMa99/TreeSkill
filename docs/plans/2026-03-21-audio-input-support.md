@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Add minimal OpenAI-compatible audio input support to EvoSkill so users can attach a local audio file in the CLI and send it as part of a chat request while keeping text-only output.
+**Goal:** Add minimal OpenAI-compatible audio input support to TreeSkill so users can attach a local audio file in the CLI and send it as part of a chat request while keeping text-only output.
 
 **Architecture:** Extend the message schema with an audio content part that mirrors the existing image content part, then teach the CLI to stage audio attachments and serialize them through the existing `LLMClient.generate()` path. Keep the change narrow: no audio output, no new high-level API surface beyond the existing chat loop.
 
@@ -40,7 +40,7 @@ Expected: PASS
 
 **Files:**
 - Create: `tests/test_cli_audio.py`
-- Modify: `evoskill/cli.py`
+- Modify: `treeskill/cli.py`
 
 **Step 1: Write the failing test**
 
@@ -66,8 +66,8 @@ Expected: PASS
 ### Task 3: Verify the focused audio-input path
 
 **Files:**
-- Modify: `evoskill/schema.py`
-- Modify: `evoskill/cli.py`
+- Modify: `treeskill/schema.py`
+- Modify: `treeskill/cli.py`
 - Modify: `README.md` (optional, if command table needs update)
 
 **Step 1: Run focused verification**

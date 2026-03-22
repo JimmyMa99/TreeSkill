@@ -1,6 +1,6 @@
 # APO 自动提示优化原理
 
-evoskill 的核心是 **APO（Automatic Prompt Optimization）**——把 System Prompt 当作"权重"，通过文本梯度下降（TGD）让 prompt 自动进化。
+treeskill 的核心是 **APO（Automatic Prompt Optimization）**——把 System Prompt 当作"权重"，通过文本梯度下降（TGD）让 prompt 自动进化。
 
 ## 两种优化模式
 

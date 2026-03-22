@@ -34,7 +34,7 @@ python demo/demo_from_skill.py
 直接进入 CLI 聊天和实时优化：
 
 ```bash
-python -m evoskill.main --skill demo/writing-skills
+python -m treeskill.main --skill demo/writing-skills
 ```
 
 主要命令：`/bad`、`/rewrite`、`/export-dpo`、`/target`、`/optimize`、`/image`、`/save`、`/quit`
@@ -45,10 +45,10 @@ python -m evoskill.main --skill demo/writing-skills
 
 ```bash
 # 自动模式（默认）：LM judge 打分，人可随时 override
-python -m evoskill.main --annotate --dataset demo/data/paper_cls_26class.jsonl --skill demo/outputs/paper-cls-26
+python -m treeskill.main --annotate --dataset demo/data/paper_cls_26class.jsonl --skill demo/outputs/paper-cls-26
 
 # 手动模式：每条等人反馈
-python -m evoskill.main --annotate --dataset demo/data/paper_cls_26class.jsonl --skill demo/outputs/paper-cls-26 --manual
+python -m treeskill.main --annotate --dataset demo/data/paper_cls_26class.jsonl --skill demo/outputs/paper-cls-26 --manual
 ```
 
 标注中可用 `/auto`、`/manual` 实时切换模式。

@@ -35,7 +35,7 @@
 
 ### Bug #1: Pydantic不可变性问题
 
-**位置**: `evoskill/core/tree_optimizer.py:186-199`
+**位置**: `treeskill/core/tree_optimizer.py:186-199`
 
 **问题**:
 ```python
@@ -65,7 +65,7 @@ result.nodes_optimized += 1
 
 ### Bug #2: Optimizer返回值问题
 
-**位置**: `evoskill/core/optimizer.py:170`
+**位置**: `treeskill/core/optimizer.py:170`
 
 **问题**:
 ```python
@@ -313,7 +313,7 @@ demo-split-showcase/              # Split Demo输出（多子skill）⭐
 ├── root.yaml
 └── TREE_VISUALIZATION.txt
 
-evoskill/core/
+treeskill/core/
 ├── tree_optimizer.py             # Tree优化器（已修复Bug #1）
 ├── optimizer.py                  # 基础优化器（已修复Bug #2）
 └── base_adapter.py               # 适配器基类（添加调试日志）
@@ -350,9 +350,9 @@ evoskill/core/
 
 ## 📚 参考资料
 
-- [EvoSkill文档](../README.md)
-- [优化器配置](../evoskill/core/optimizer_config.py)
-- [Tree优化器](../evoskill/core/tree_optimizer.py)
+- [TreeSkill文档](../README.md)
+- [优化器配置](../treeskill/core/optimizer_config.py)
+- [Tree优化器](../treeskill/core/tree_optimizer.py)
 - [Pydantic文档 - model_copy](https://docs.pydantic.dev/latest/concepts/serialization/#model_copy)
 
 ---

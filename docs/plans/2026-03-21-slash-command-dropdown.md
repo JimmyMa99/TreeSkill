@@ -27,7 +27,7 @@ Expected: FAIL because the completer helper does not exist yet.
 
 **Step 3: Write minimal implementation**
 
-Add the slash completer helper in `evoskill/cli.py` using `_COMMAND_SPECS`.
+Add the slash completer helper in `treeskill/cli.py` using `_COMMAND_SPECS`.
 
 **Step 4: Run test to verify it passes**
 
@@ -85,7 +85,7 @@ Expected: PASS
 ### Task 4: Wire prompt_toolkit into the chat loop
 
 **Files:**
-- Modify: `evoskill/cli.py`
+- Modify: `treeskill/cli.py`
 - Modify: `pyproject.toml`
 - Test: `tests/test_cli_audio.py`
 
@@ -101,7 +101,7 @@ Expected: FAIL because the helper or dependency wiring does not exist yet.
 **Step 3: Write minimal implementation**
 
 - Add `prompt_toolkit` to runtime dependencies.
-- Create a prompt-session helper in `evoskill/cli.py`.
+- Create a prompt-session helper in `treeskill/cli.py`.
 - Use that helper inside `ChatCLI.run()` in place of the current `Prompt.ask()` call.
 
 **Step 4: Run test to verify it passes**

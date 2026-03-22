@@ -1,8 +1,8 @@
-# 🎉 EvoSkill v0.2.0 完整实现总结
+# 🎉 TreeSkill v0.2.0 完整实现总结
 
 ## 项目概览
 
-**EvoSkill** 是一个基于文本梯度下降（TGD）的训练无关提示词优化框架，仅使用API调用即可优化LLM提示词，无需模型训练。
+**TreeSkill** 是一个基于文本梯度下降（TGD）的训练无关提示词优化框架，仅使用API调用即可优化LLM提示词，无需模型训练。
 
 ---
 
@@ -11,7 +11,7 @@
 ### Phase 1: 改名 + 插件化 ✅
 
 #### 1.1 包重命名
-- ✅ `evo_framework/` → `evoskill/`
+- ✅ `evo_framework/` → `treeskill/`
 - ✅ 更新 `pyproject.toml`
 - ✅ 创建向后兼容层 `evo_framework/__init__.py`
 - ✅ 全局导入更新（14个核心文件）
@@ -19,7 +19,7 @@
 - ✅ 示例文件更新
 
 #### 1.2 插件系统
-- ✅ Registry 系统（`evoskill/registry.py`）
+- ✅ Registry 系统（`treeskill/registry.py`）
 - ✅ 装饰器：`@adapter`, `@optimizer`, `@hook`
 - ✅ 生命周期钩子系统
 - ✅ 配置文件加载支持
@@ -72,7 +72,7 @@
 ## 📂 完整文件结构
 
 ```
-evoskill/
+treeskill/
 ├── __init__.py                  # ✅ 主入口（延迟导入适配器）
 │
 ├── core/                        # ✅ 核心抽象层
@@ -95,7 +95,7 @@ evoskill/
 └── [legacy modules]            # 遗留模块（向后兼容）
 
 evo_framework/                   # ⚠️ 向后兼容层
-└── __init__.py                 # 重导出 evoskill
+└── __init__.py                 # 重导出 treeskill
 
 tests/
 ├── tests/test_core_abstractions.py   # 核心抽象测试
@@ -133,7 +133,7 @@ docs/
 ### 1. 训练无关优化
 
 ```python
-from evoskill import TextPrompt, TrainFreeOptimizer, OpenAIAdapter
+from treeskill import TextPrompt, TrainFreeOptimizer, OpenAIAdapter
 
 # 创建初始提示词
 prompt = TextPrompt(content="你是一个助手。")
@@ -154,7 +154,7 @@ print(result.optimized_prompt.content)
 ### 2. 插件化扩展
 
 ```python
-from evoskill import adapter, hook, registry
+from treeskill import adapter, hook, registry
 
 # 自定义适配器
 @adapter("my-custom")
@@ -173,7 +173,7 @@ adapter = registry.get_adapter("my-custom")
 ### 3. 策略选择
 
 ```python
-from evoskill import OptimizerConfig
+from treeskill import OptimizerConfig
 
 # 保守优化
 config = OptimizerConfig(
@@ -191,7 +191,7 @@ config = OptimizerConfig(
 ### 4. 自动验证
 
 ```python
-from evoskill import AutoValidator
+from treeskill import AutoValidator
 
 validator = AutoValidator(
     adapter=adapter,
@@ -283,7 +283,7 @@ new_prompt = result.optimized_prompt
 ### 2. A/B测试
 
 ```python
-from evoskill import ConservativeStrategy, AggressiveStrategy
+from treeskill import ConservativeStrategy, AggressiveStrategy
 
 # 版本A：保守优化
 config_a = OptimizerConfig(conservative=True)
@@ -393,7 +393,7 @@ from evo_framework import Skill, Trace, APOEngine
 # ⚠️ 显示 DeprecationWarning
 
 # 新代码（v0.2+）- 推荐
-from evoskill import TextPrompt, TrainFreeOptimizer
+from treeskill import TextPrompt, TrainFreeOptimizer
 ```
 
 ### 迁移路径
