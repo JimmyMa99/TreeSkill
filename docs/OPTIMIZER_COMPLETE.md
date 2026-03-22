@@ -2,7 +2,7 @@
 
 ## 已实现
 
-### 1. **TrainFreeOptimizer**（`evoskill/core/optimizer.py`）
+### 1. **TrainFreeOptimizer**（`treeskill/core/optimizer.py`）
 - 基于 TGD 的训练无关优化器
 - 迭代优化循环（失败分析 → 梯度计算 → 应用更新）
 - 失败经验提取逻辑
@@ -10,19 +10,19 @@
 - 优化历史追踪
 - 验证器集成
 
-### 2. **配置系统**（`evoskill/core/optimizer_config.py`）
+### 2. **配置系统**（`treeskill/core/optimizer_config.py`）
 - `OptimizerConfig` - 优化器配置
 - `OptimizationResult` - 优化结果
 - `OptimizationStep` - 单步优化记录
 - `Validator` 类型定义
 
-### 3. **策略模式**（`evoskill/core/strategies.py`）
+### 3. **策略模式**（`treeskill/core/strategies.py`）
 - `ConservativeStrategy` - 保守更新（低学习率）
 - `AggressiveStrategy` - 激进更新（高学习率）
 - `AdaptiveStrategy` - 自适应更新（学习率调度）
 - `get_strategy()` 工厂函数
 
-### 4. **验证器**（`evoskill/core/validators.py`）
+### 4. **验证器**（`treeskill/core/validators.py`）
 - `AutoValidator` - 自动验证（在测试集上评估）
 - `MetricValidator` - 基于指标的验证
 - `CompositeValidator` - 组合验证器
@@ -223,7 +223,7 @@ if improvement < threshold:
 ### 快速开始
 
 ```python
-from evoskill import (
+from treeskill import (
     TextPrompt,
     OpenAIAdapter,
     TrainFreeOptimizer,
@@ -271,7 +271,7 @@ print(result.optimized_prompt.content)
 ### 带验证的优化
 
 ```python
-from evoskill import AutoValidator
+from treeskill import AutoValidator
 
 # 创建测试集
 test_cases = [
@@ -300,7 +300,7 @@ print(f"提升: {result.improvement:+.3f}")
 ### 使用策略
 
 ```python
-from evoskill import ConservativeStrategy, AggressiveStrategy
+from treeskill import ConservativeStrategy, AggressiveStrategy
 
 # 保守优化
 conservative_strategy = ConservativeStrategy()
@@ -317,7 +317,7 @@ config = OptimizerConfig(
 )
 
 # 自适应优化
-from evoskill import AdaptiveStrategy
+from treeskill import AdaptiveStrategy
 adaptive_strategy = AdaptiveStrategy(initial_patience=2)
 ```
 
@@ -326,7 +326,7 @@ adaptive_strategy = AdaptiveStrategy(initial_patience=2)
 ## 文件结构
 
 ```
-evoskill/
+treeskill/
 ├── core/
 │   ├── TrainFreeOptimizer
 │   ├── 配置类
@@ -453,13 +453,13 @@ def parallel_validator(prompt):
 
 ```python
 # 旧代码（v0.1）继续工作
-from evoskill import Skill, Trace, APOEngine
+from treeskill import Skill, Trace, APOEngine
 
 engine = APOEngine(config, llm)
 new_skill = engine.optimize(skill, traces)
 
 # 新代码（v0.2+）- 推荐
-from evoskill import TrainFreeOptimizer, TextPrompt
+from treeskill import TrainFreeOptimizer, TextPrompt
 
 optimizer = TrainFreeOptimizer(adapter, config)
 result = optimizer.optimize(prompt, experiences)
@@ -469,7 +469,7 @@ result = optimizer.optimize(prompt, experiences)
 
 ```python
 # Step 1: 收集新的经验格式
-from evoskill import ConversationExperience, CompositeFeedback
+from treeskill import ConversationExperience, CompositeFeedback
 
 new_failures = []
 for trace in old_traces:
@@ -484,7 +484,7 @@ for trace in old_traces:
     new_failures.append(exp)
 
 # Step 2: 使用新优化器
-from evoskill import TextPrompt, TrainFreeOptimizer
+from treeskill import TextPrompt, TrainFreeOptimizer
 
 prompt = TextPrompt(content=skill.system_prompt)
 optimizer = TrainFreeOptimizer(adapter)

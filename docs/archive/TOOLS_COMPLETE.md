@@ -23,7 +23,7 @@
 ### 1. 用户友好的装饰器API
 
 ```python
-from evoskill.tools import tool, tool_registry
+from treeskill.tools import tool, tool_registry
 
 @tool()
 def calculate_laplace(expr: str) -> str:
@@ -45,7 +45,7 @@ result = tool_registry.execute("calculate_laplace", "sin(t)")
 #### HTTP API工具
 
 ```python
-from evoskill.tools import create_http_tool
+from treeskill.tools import create_http_tool
 
 weather_api = create_http_tool(
     name="weather_api",
@@ -60,7 +60,7 @@ result = weather_api.execute(city="Beijing")
 #### MCP工具（Model Context Protocol）
 
 ```python
-from evoskill.tools import create_mcp_tool
+from treeskill.tools import create_mcp_tool
 
 db_tool = create_mcp_tool(
     name="database",
@@ -88,7 +88,7 @@ tools:
 ```
 
 ```python
-from evoskill.tools import tool_registry
+from treeskill.tools import tool_registry
 
 tool_registry.load_from_config("config.yaml")
 ```
@@ -117,7 +117,7 @@ schema = tool_registry.get("get_weather").to_schema()
 ### 5. 与优化器集成
 
 ```python
-from evoskill import TrainFreeOptimizer
+from treeskill import TrainFreeOptimizer
 
 # 注册验证工具
 @tool()
@@ -141,7 +141,7 @@ result = optimizer.optimize(prompt, failures, validator=my_validator)
 ## 📂 文件结构
 
 ```
-evoskill/
+treeskill/
 ├── tools.py              # ✨ 工具注册系统 (~400行)
 │   ├── BaseTool          # 抽象基类
 │   ├── PythonFunctionTool # Python函数工具
@@ -209,7 +209,7 @@ Schema: {'name': 'weather_query', 'description': '查询城市天气（模拟）
 ### 1. 数学助手验证工具
 
 ```python
-from evoskill.tools import tool, tool_registry
+from treeskill.tools import tool, tool_registry
 
 @tool()
 def verify_laplace(expr: str, answer: str) -> dict:
@@ -240,7 +240,7 @@ print(result)
 ### 2. 数据库查询工具
 
 ```python
-from evoskill.tools import create_mcp_tool
+from treeskill.tools import create_mcp_tool
 
 db_tool = create_mcp_tool(
     name="query_database",
@@ -257,7 +257,7 @@ users = tool_registry.execute("query_database", sql="SELECT * FROM users LIMIT 1
 ### 3. 工具组合
 
 ```python
-from evoskill.tools import tool
+from treeskill.tools import tool
 
 @tool()
 def query_database(sql: str) -> list:

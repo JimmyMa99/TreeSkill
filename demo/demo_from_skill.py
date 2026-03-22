@@ -20,13 +20,13 @@ from rich.markdown import Markdown
 from rich.table import Table
 from rich.prompt import Prompt, Confirm
 
-from evoskill.config import GlobalConfig
-from evoskill.schema import Skill, Message, Feedback, Trace
-from evoskill.llm import LLMClient
-from evoskill.storage import TraceStorage
-from evoskill.optimizer import APOEngine
-from evoskill.checkpoint import CheckpointManager
-from evoskill import skill as skill_module
+from treeskill.config import GlobalConfig
+from treeskill.schema import Skill, Message, Feedback, Trace
+from treeskill.llm import LLMClient
+from treeskill.storage import TraceStorage
+from treeskill.optimizer import APOEngine
+from treeskill.checkpoint import CheckpointManager
+from treeskill import skill as skill_module
 
 console = Console()
 config = GlobalConfig()
@@ -219,4 +219,4 @@ else:
 
 console.print("\n[bold]✨ Demo complete![/bold]")
 console.print("[dim]The evolved skill has been saved to demo/writing-skills.yaml[/dim]")
-console.print("[dim]你可以Continue用 CLI 与它交互：python -m evoskill.main --skill demo/example[/dim]\n")
+console.print("[dim]你可以Continue用 CLI 与它交互：python -m treeskill.main --skill demo/example[/dim]\n")

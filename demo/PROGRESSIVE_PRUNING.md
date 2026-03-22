@@ -341,8 +341,8 @@ grep "子skill数" demo/outputs/demo-qwen3-8b-tree/*.log
 
 ### 相关文件
 
-- `evoskill/skill_tree.py` - SkillNode定义（age, usage_count, collapsed字段）
-- `evoskill/core/tree_optimizer.py` - 剪枝逻辑实现
+- `treeskill/skill_tree.py` - SkillNode定义（age, usage_count, collapsed字段）
+- `treeskill/core/tree_optimizer.py` - 剪枝逻辑实现
 - `demo/demo_qwen3_8b_tree.py` - 完整Demo
 
 ### 配置参数文档

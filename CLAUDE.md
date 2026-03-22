@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EvoSkill is a train-free prompt optimization framework using Textual Gradient Descent (TGD). It treats system prompts as "weights" and interaction history as "dataset" to iteratively improve prompts via API calls only—no model training required.
+TreeSkill is a train-free prompt optimization framework using Textual Gradient Descent (TGD). It treats system prompts as "weights" and interaction history as "dataset" to iteratively improve prompts via API calls only—no model training required.
 
 ## Commands
 
@@ -16,10 +16,10 @@ pip install -e .
 pytest test_*.py
 
 # Start interactive CLI with skill
-python -m evoskill.main --skill <path-to-skill.yaml-or-directory>
+python -m treeskill.main --skill <path-to-skill.yaml-or-directory>
 
 # Start with config file
-python -m evoskill.main --config <config.yaml> --skill <skill>
+python -m treeskill.main --config <config.yaml> --skill <skill>
 
 # Run demos
 python demo/demo_from_scratch.py    # Build skill from scratch
@@ -38,7 +38,7 @@ python example_load_skill_and_config.py  # Load stored skill + config
 ### Core Layers
 
 ```
-evoskill/
+treeskill/
 ├── core/              # Core abstraction layer (v0.2)
 │   ├── abc.py         # Abstract base classes (OptimizablePrompt, ModelAdapter, etc.)
 │   ├── optimizer.py   # TrainFreeOptimizer - TGD algorithm
@@ -139,7 +139,7 @@ Skill template: `demo/example/skill.yaml`
 
 ## Development Notes
 
-- **v0.2 migration**: New `evoskill/` package with core abstractions; `evo_framework/` legacy still works with deprecation warning
+- **v0.2 migration**: New `treeskill/` package with core abstractions; `evo_framework/` legacy still works with deprecation warning
 - **YAML encoding**: `skill.save()` uses `allow_unicode=True` for readable Chinese
 - **Trace deduplication**: Known issue - `/bad` and `/rewrite` may append same trace twice (should be fixed with ID-based dedup)
 - **APO max_steps**: `APOConfig.max_steps` exists but multi-step loop not yet implemented

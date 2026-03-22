@@ -1,4 +1,4 @@
-# EvoSkill
+# TreeSkill
 
 English | [中文](../README.md)
 
@@ -12,9 +12,9 @@ User Feedback -> Diagnose Failure -> Compute Text Gradient -> Beam Search Rewrit
 
 ## Core Philosophy
 
-EvoSkill draws an analogy between LLM prompt optimization and deep learning's training loop, but **requires no model training at all**:
+TreeSkill draws an analogy between LLM prompt optimization and deep learning's training loop, but **requires no model training at all**:
 
-| Deep Learning | EvoSkill |
+| Deep Learning | TreeSkill |
 |----------|----------|
 | Model Weights | System Prompt |
 | Training Data | Interaction Feedback (Human or LLM Judge) |
@@ -40,8 +40,8 @@ EvoSkill draws an analogy between LLM prompt optimization and deep learning's tr
 ## Installation
 
 ```bash
-git clone https://github.com/JimmyMa99/EvoSkill.git
-cd EvoSkill
+git clone https://github.com/JimmyMa99/TreeSkill.git
+cd TreeSkill
 pip install -e .
 ```
 
@@ -57,27 +57,27 @@ cp demo/example/config.yaml my-config.yaml
 Or use environment variables:
 
 ```env
-EVO_LLM_API_KEY=your-api-key
-EVO_LLM_BASE_URL=https://api.siliconflow.cn/v1
-EVO_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
+TREE_LLM_API_KEY=your-api-key
+TREE_LLM_BASE_URL=https://api.siliconflow.cn/v1
+TREE_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
 ### 2. Launch
 
 ```bash
 # Use an existing skill directory
-python -m evoskill.main --config my-config.yaml --skill skills/fast-test-skill
+python -m treeskill.main --config my-config.yaml --skill skills/fast-test-skill
 
 # Use default skill (auto-created)
-python -m evoskill.main --skill default
+python -m treeskill.main --skill default
 
 # Use a skill tree directory
-python -m evoskill.main --skill my-skills/
+python -m treeskill.main --skill my-skills/
 ```
 
 ### 3. Human-in-the-Loop Optimization
 
-The core interaction mode of EvoSkill is **human-machine collaborative optimization**: domain experts guide the APO engine to improve prompts through natural language feedback.
+The core interaction mode of TreeSkill is **human-machine collaborative optimization**: domain experts guide the APO engine to improve prompts through natural language feedback.
 
 ```
 You: Write a short essay about spring
@@ -98,13 +98,13 @@ Dataset-driven mode is also supported:
 
 ```bash
 # Fully automatic: LLM Judge scoring -> APO optimization, no human intervention
-python -m evoskill.main --optimize --dataset train.jsonl --skill my-skill --no-resume
+python -m treeskill.main --optimize --dataset train.jsonl --skill my-skill --no-resume
 
 # Human-machine collaborative annotation: auto-judge scores, humans can override anytime (preference signals -> guide the judge)
-python -m evoskill.main --annotate --dataset train.jsonl --skill my-skill
+python -m treeskill.main --annotate --dataset train.jsonl --skill my-skill
 
 # Purely manual annotation
-python -m evoskill.main --annotate --dataset train.jsonl --skill my-skill --manual
+python -m treeskill.main --annotate --dataset train.jsonl --skill my-skill --manual
 ```
 
 In annotation mode, human feedback serves as natural language preference signals, used both as input for APO gradients and exportable as DPO fine-tuning data.
@@ -264,13 +264,13 @@ ckpt/
 /restore writing-assistant_v1.2_20260306_140000       # Restore
 
 # Command-line restore
-python -m evoskill.main --ckpt ckpt/writing-assistant_v1.2_20260306_140000
+python -m treeskill.main --ckpt ckpt/writing-assistant_v1.2_20260306_140000
 ```
 
 ## Project Structure
 
 ```
-evoskill/
+treeskill/
 ├── core/                   # Core abstraction layer
 │   ├── abc.py             # Abstract base classes
 │   ├── optimizer.py       # TrainFreeOptimizer (TGD)
@@ -296,17 +296,17 @@ evoskill/
 
 | Variable | Default | Description |
 |------|--------|------|
-| `EVO_LLM_API_KEY` | -- | API key |
-| `EVO_LLM_BASE_URL` | `https://api.openai.com/v1` | API endpoint |
-| `EVO_LLM_MODEL` | `gpt-4o` | Chat model |
-| `EVO_LLM_JUDGE_MODEL` | `gpt-4o` | Judge model (for gradient computation + scoring) |
-| `EVO_LLM_TEMPERATURE` | `0.7` | Generation temperature |
-| `EVO_STORAGE_TRACE_PATH` | `./data/traces.jsonl` | Trace file path |
-| `EVO_STORAGE_SKILL_PATH` | `./skills` | Skill directory |
-| `EVO_APO_GRADIENT_ACCUMULATION_STEPS` | `5` | Number of feedback samples per gradient computation |
-| `EVO_APO_BEAM_WIDTH` | `1` | Beam width (1=single-track, >1=beam search) |
-| `EVO_APO_BRANCH_FACTOR` | `2` | Number of candidates generated per parent |
-| `EVO_APO_BEAM_ROUNDS` | `3` | Beam search rounds |
+| `TREE_LLM_API_KEY` | -- | API key |
+| `TREE_LLM_BASE_URL` | `https://api.openai.com/v1` | API endpoint |
+| `TREE_LLM_MODEL` | `gpt-4o` | Chat model |
+| `TREE_LLM_JUDGE_MODEL` | `gpt-4o` | Judge model (for gradient computation + scoring) |
+| `TREE_LLM_TEMPERATURE` | `0.7` | Generation temperature |
+| `TREE_STORAGE_TRACE_PATH` | `./data/traces.jsonl` | Trace file path |
+| `TREE_STORAGE_SKILL_PATH` | `./skills` | Skill directory |
+| `TREE_APO_GRADIENT_ACCUMULATION_STEPS` | `5` | Number of feedback samples per gradient computation |
+| `TREE_APO_BEAM_WIDTH` | `1` | Beam width (1=single-track, >1=beam search) |
+| `TREE_APO_BRANCH_FACTOR` | `2` | Number of candidates generated per parent |
+| `TREE_APO_BEAM_ROUNDS` | `3` | Beam search rounds |
 
 Full configuration template: [`demo/example/config.yaml`](./demo/example/config.yaml)
 

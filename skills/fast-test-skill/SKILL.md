@@ -1,6 +1,6 @@
 ---
 name: fast-test-skill
-description: 快速验证 evoskill 框架核心功能的测试技能。用于测试聊天、反馈、优化、技能树等完整流程。
+description: 快速验证 treeskill 框架核心功能的测试技能。用于测试聊天、反馈、优化、技能树等完整流程。
 metadata:
   version: "1.0"
   target: "回答简洁准确，不超过三句话"

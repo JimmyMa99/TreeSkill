@@ -1,6 +1,6 @@
 # Skill 文件格式 (Agent Skills 标准)
 
-evoskill 的 Skill 文件遵循 [Agent Skills 开放标准](https://agentskills.io/specification)，与 Claude Code、Cursor、Gemini CLI 等 30+ 工具互通。
+treeskill 的 Skill 文件遵循 [Agent Skills 开放标准](https://agentskills.io/specification)，与 Claude Code、Cursor、Gemini CLI 等 30+ 工具互通。
 
 ## 目录结构
 
@@ -33,7 +33,7 @@ metadata:
 
 ### Frontmatter 字段
 
-| 字段 | 必填 | 约束 | evoskill 映射 |
+| 字段 | 必填 | 约束 | treeskill 映射 |
 |------|------|------|---------------|
 | `name` | 是 | kebab-case，≤64字符，需与目录名一致 | `Skill.name` |
 | `description` | 是 | ≤1024字符，描述用途和触发条件 | `Skill.description` |
@@ -51,7 +51,7 @@ Frontmatter 之后的正文就是 **System Prompt**——也是 APO 优化的目
 
 ## config.yaml（可选）
 
-存放 evoskill 专属的运行时配置：
+存放 treeskill 专属的运行时配置：
 
 ```yaml
 # 模型参数

@@ -7,7 +7,7 @@
 #### 目录结构
 ```
 evo_agent/
-├── evoskill/              # ✅ 新包名（重命名自 evo_framework）
+├── treeskill/              # ✅ 新包名（重命名自 evo_framework）
 │   ├── __init__.py       # ✅ 更新为新导入
 │   ├── core/             # ✅ 核心抽象层
 │   ├── adapters/         # ✅ 模型适配器
@@ -15,7 +15,7 @@ evo_agent/
 │   └── ...
 │
 ├── evo_framework/         # ⚠️ 向后兼容层（保留）
-│   └── __init__.py       # ⚠️ 导入并重导出 evoskill
+│   └── __init__.py       # ⚠️ 导入并重导出 treeskill
 │
 └── pyproject.toml        # ✅ 更新包名
 ```
@@ -23,25 +23,25 @@ evo_agent/
 #### 完成的更新
 
 1. **目录重命名** ✅
-   - `evo_framework/` → `evoskill/`
+   - `evo_framework/` → `treeskill/`
 
 2. **pyproject.toml** ✅
    ```toml
    [project]
-   name = "evoskill"
+   name = "treeskill"
    version = "0.2.0"
    ```
 
 3. **所有导入更新** ✅
-   - evoskill/core/*.py - 所有 `from evo_framework` → `from evoskill`
-   - evoskill/adapters/*.py - 所有导入更新
-   - evoskill/*.py - 所有模块导入更新
+   - treeskill/core/*.py - 所有 `from evo_framework` → `from treeskill`
+   - treeskill/adapters/*.py - 所有导入更新
+   - treeskill/*.py - 所有模块导入更新
    - test*.py - 所有测试文件更新
    - demo/ - 所有示例更新
    - examples/ - 所有示例更新
 
 4. **向后兼容层** ✅
-   - `evo_framework/__init__.py` - 自动重导出 evoskill
+   - `evo_framework/__init__.py` - 自动重导出 treeskill
    - 显示 DeprecationWarning 提示用户迁移
    - 现有代码无需修改即可继续工作
 
@@ -49,10 +49,10 @@ evo_agent/
 
 ### 2. 插件化架构 ✅
 
-#### Registry 系统（`evoskill/registry.py`）
+#### Registry 系统（`treeskill/registry.py`）
 
 ```python
-class EvoSkillRegistry:
+class TreeSkillRegistry:
     """中央插件注册表"""
 
     # 适配器管理
@@ -73,7 +73,7 @@ class EvoSkillRegistry:
     def load_from_config(config_path: Union[str, Path])
 
 # 全局单例
-registry = EvoSkillRegistry()
+registry = TreeSkillRegistry()
 
 # 装饰器
 @adapter(name, set_default=False, meta=None)
@@ -103,7 +103,7 @@ registry = EvoSkillRegistry()
    ```yaml
    adapters:
      openai:
-       class: evoskill.adapters.openai.OpenAIAdapter
+       class: treeskill.adapters.openai.OpenAIAdapter
        default: true
        config:
          model: gpt-4o-mini
@@ -117,11 +117,11 @@ registry = EvoSkillRegistry()
 
 ### 3. 导出API ✅
 
-#### `evoskill/__init__.py`
+#### `treeskill/__init__.py`
 
 ```python
 # 核心抽象层
-from evoskill.core import (
+from treeskill.core import (
     OptimizablePrompt, TextPrompt, MultimodalPrompt,
     TextualGradient, SimpleGradient,
     Experience, Feedback,
@@ -129,19 +129,19 @@ from evoskill.core import (
 )
 
 # 模型适配器
-from evoskill.adapters.openai import OpenAIAdapter
-from evoskill.adapters.anthropic import AnthropicAdapter
+from treeskill.adapters.openai import OpenAIAdapter
+from treeskill.adapters.anthropic import AnthropicAdapter
 
 # 插件系统
-from evoskill.registry import (
-    EvoSkillRegistry, registry,
+from treeskill.registry import (
+    TreeSkillRegistry, registry,
     adapter, optimizer, hook, ComponentMeta,
 )
 
 # 遗留兼容（v0.1）
-from evoskill.schema import Skill, Trace, Message, ...
-from evoskill.config import GlobalConfig
-from evoskill.skill_tree import SkillTree
+from treeskill.schema import Skill, Trace, Message, ...
+from treeskill.config import GlobalConfig
+from treeskill.skill_tree import SkillTree
 ```
 
 ---
@@ -151,10 +151,10 @@ from evoskill.skill_tree import SkillTree
 ### 新API（推荐）
 
 ```python
-from evoskill import TextPrompt, registry
+from treeskill import TextPrompt, registry
 
 # 方法1: 直接使用适配器
-from evoskill import OpenAIAdapter
+from treeskill import OpenAIAdapter
 adapter = OpenAIAdapter(model="gpt-4o-mini")
 
 # 方法2: 通过Registry
@@ -168,7 +168,7 @@ response = adapter.generate(prompt)
 ### 自定义插件
 
 ```python
-from evoskill import adapter, hook
+from treeskill import adapter, hook
 
 # 自定义钩子
 @hook('after_optimize')
@@ -183,13 +183,13 @@ def log_to_wandb(old_skill, new_skill, gradient):
 # config.yaml
 adapters:
   openai:
-    class: evoskill.adapters.openai.OpenAIAdapter
+    class: treeskill.adapters.openai.OpenAIAdapter
     default: true
     config:
       model: gpt-4o-mini
 
   claude:
-    class: evoskill.adapters.anthropic.AnthropicAdapter
+    class: treeskill.adapters.anthropic.AnthropicAdapter
     config:
       model: claude-3-5-sonnet-20241022
 
@@ -201,7 +201,7 @@ hooks:
 ```
 
 ```python
-from evoskill import registry
+from treeskill import registry
 
 registry.load_from_config("config.yaml")
 adapter = registry.get_adapter()  # 获取默认适配器
@@ -216,10 +216,10 @@ adapter = registry.get_adapter()  # 获取默认适配器
 ```python
 # 旧代码（v0.1）- 继续工作，但显示警告
 from evo_framework import Skill, Trace
-# ⚠️ DeprecationWarning: Please use 'evoskill' instead
+# ⚠️ DeprecationWarning: Please use 'treeskill' instead
 
 # 新代码（v0.2+）- 推荐
-from evoskill import Skill, Trace
+from treeskill import Skill, Trace
 ```
 
 ---
@@ -230,20 +230,20 @@ from evoskill import Skill, Trace
 
 | 类别 | 文件数 | 状态 |
 |------|--------|------|
-| evoskill/*.py | ~15 | ✅ 已更新 |
-| evoskill/core/*.py | 5 | ✅ 已更新 |
-| evoskill/adapters/*.py | 3 | ✅ 已更新 |
+| treeskill/*.py | ~15 | ✅ 已更新 |
+| treeskill/core/*.py | 5 | ✅ 已更新 |
+| treeskill/adapters/*.py | 3 | ✅ 已更新 |
 | test*.py | 4 | ✅ 已更新 |
 | demo/*.py | 2 | ✅ 已更新 |
 
 ### 导入检查
 
 ```bash
-# 检查 evoskill 目录中是否还有旧导入
-grep -r "from evo_framework" evoskill/
+# 检查 treeskill 目录中是否还有旧导入
+grep -r "from evo_framework" treeskill/
 # 输出: 无 ✅
 
-grep -r "import evo_framework" evoskill/
+grep -r "import evo_framework" treeskill/
 # 输出: 无 ✅
 ```
 
@@ -307,7 +307,7 @@ grep -r "import evo_framework" evoskill/
 ## 总结
 
 ### ✅ 已完成
-1. 包重命名：`evo_framework` → `evoskill`
+1. 包重命名：`evo_framework` → `treeskill`
 2. 插件系统：Registry + 装饰器 + 钩子
 3. 向后兼容：零破坏性迁移
 4. 全局导入更新：所有文件已迁移
@@ -320,7 +320,7 @@ grep -r "import evo_framework" evoskill/
 
 ### 📦 准备就绪
 - ✅ 可以安装：`pip install -e .`
-- ✅ 可以导入：`from evoskill import ...`
+- ✅ 可以导入：`from treeskill import ...`
 - ✅ 向后兼容：`from evo_framework import ...` 继续工作
 - ✅ 可以扩展：用户可以注册自定义组件
 

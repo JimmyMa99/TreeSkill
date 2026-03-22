@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill import (
+from treeskill import (
     TextPrompt,
     SimpleGradient,
     ConversationExperience,
@@ -119,7 +119,7 @@ def mock_adapter_apply_gradient(prompt, gradient, conservative=False, **kwargs):
 
 def create_mock_adapter():
     """Create模拟适配器"""
-    from evoskill import BaseModelAdapter
+    from treeskill import BaseModelAdapter
 
     class MockAdapter(BaseModelAdapter):
         def __init__(self):

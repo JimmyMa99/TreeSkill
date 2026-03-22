@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     ConversationExperience,
     CompositeFeedback,
@@ -26,8 +26,8 @@ from evoskill.core import (
     TrainFreeOptimizer,
     OptimizerConfig,
 )
-from evoskill.adapters.openai import OpenAIAdapter
-from evoskill.core.validators import AutoValidator
+from treeskill.adapters.openai import OpenAIAdapter
+from treeskill.core.validators import AutoValidator
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 

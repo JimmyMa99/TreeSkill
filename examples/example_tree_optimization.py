@@ -33,7 +33,7 @@ from typing import List
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill import (
+from treeskill import (
     SkillTree,
     OpenAIAdapter,
     TreeAwareOptimizer,
@@ -76,7 +76,7 @@ def load_or_create_skill_tree() -> SkillTree:
     else:
         logger.info(f"🆕 Creating new skill tree at {tree_path}")
         # Create a simple tree with root skill
-        from evoskill import Skill, SkillMeta
+        from treeskill import Skill, SkillMeta
 
         root_skill = Skill(
             name="assistant",
@@ -393,6 +393,6 @@ def main():
 
 if __name__ == "__main__":
     # Import SkillNode (needed for creating tree)
-    from evoskill.skill_tree import SkillNode
+    from treeskill.skill_tree import SkillNode
 
     main()

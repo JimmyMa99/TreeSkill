@@ -27,13 +27,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from evoskill.config import GlobalConfig
-from evoskill.llm import LLMClient
-from evoskill.optimizer import APOEngine
-from evoskill.resume import ResumeState
-from evoskill.schema import Feedback, Message, Skill, Trace
-from evoskill.skill import save as save_skill
-from evoskill.skill_tree import SkillTree
+from treeskill.config import GlobalConfig
+from treeskill.llm import LLMClient
+from treeskill.optimizer import APOEngine
+from treeskill.resume import ResumeState
+from treeskill.schema import Feedback, Message, Skill, Trace
+from treeskill.skill import save as save_skill
+from treeskill.skill_tree import SkillTree
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -159,8 +159,8 @@ def main():
 
     # OpenAI client for classification
     client = openai.OpenAI(
-        api_key=os.getenv("EVO_LLM_API_KEY"),
-        base_url=os.getenv("EVO_LLM_BASE_URL"),
+        api_key=os.getenv("TREE_LLM_API_KEY"),
+        base_url=os.getenv("TREE_LLM_BASE_URL"),
     )
 
     # APOEngine with judge model

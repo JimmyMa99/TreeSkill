@@ -11,12 +11,12 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from evoskill.core import (
+from treeskill.core import (
     TextPrompt,
     ConversationExperience,
     CompositeFeedback,
 )
-from evoskill.adapters.openai import OpenAIAdapter
+from treeskill.adapters.openai import OpenAIAdapter
 
 
 def test_basic_generation():

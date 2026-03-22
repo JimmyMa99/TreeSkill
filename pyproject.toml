@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "evoskill"
+name = "treeskill"
 version = "0.2.0"
 description = "Train-free prompt evolution framework via Textual Gradient Descent"
 readme = "README.md"
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-evoskill = "evoskill.cli:main"
+treeskill = "treeskill.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["evoskill*"]
+include = ["treeskill*"]

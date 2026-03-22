@@ -1,4 +1,4 @@
-# EvoSkill
+# TreeSkill
 
 [English](./docs_en/README.md) | 中文
 
@@ -12,9 +12,9 @@
 
 ## 核心理念
 
-EvoSkill 将 LLM prompt 优化类比为深度学习的训练循环，但**完全不需要训练模型**：
+TreeSkill 将 LLM prompt 优化类比为深度学习的训练循环，但**完全不需要训练模型**：
 
-| 深度学习 | EvoSkill |
+| 深度学习 | TreeSkill |
 |----------|----------|
 | 模型权重 | System Prompt |
 | 训练数据 | 交互反馈（人工 or LLM Judge） |
@@ -40,8 +40,8 @@ EvoSkill 将 LLM prompt 优化类比为深度学习的训练循环，但**完全
 ## 安装
 
 ```bash
-git clone https://github.com/JimmyMa99/EvoSkill.git
-cd EvoSkill
+git clone https://github.com/JimmyMa99/TreeSkill.git
+cd TreeSkill
 pip install -e .
 ```
 
@@ -66,18 +66,18 @@ EVO_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 
 ```bash
 # 用已有 skill 目录
-python -m evoskill.main --config my-config.yaml --skill skills/fast-test-skill
+python -m treeskill.main --config my-config.yaml --skill skills/fast-test-skill
 
 # 用默认 skill（自动创建）
-python -m evoskill.main --skill default
+python -m treeskill.main --skill default
 
 # 用 skill 树目录
-python -m evoskill.main --skill my-skills/
+python -m treeskill.main --skill my-skills/
 ```
 
 ### 3. Human-in-the-Loop 优化
 
-EvoSkill 的核心交互模式是**人机协作优化**：领域专家通过自然语言反馈，引导 APO 引擎改进 prompt。
+TreeSkill 的核心交互模式是**人机协作优化**：领域专家通过自然语言反馈，引导 APO 引擎改进 prompt。
 
 ```
 You: 帮我写一段关于春天的短文
@@ -98,13 +98,13 @@ You: /optimize                            ← 触发 APO 优化
 
 ```bash
 # 全自动：LLM Judge 评分 → APO 优化，无需人工
-python -m evoskill.main --optimize --dataset train.jsonl --skill my-skill --no-resume
+python -m treeskill.main --optimize --dataset train.jsonl --skill my-skill --no-resume
 
 # 人机协作标注：auto-judge 打分，人可随时 override（偏好信号 → 指导 judge）
-python -m evoskill.main --annotate --dataset train.jsonl --skill my-skill
+python -m treeskill.main --annotate --dataset train.jsonl --skill my-skill
 
 # 纯手动标注
-python -m evoskill.main --annotate --dataset train.jsonl --skill my-skill --manual
+python -m treeskill.main --annotate --dataset train.jsonl --skill my-skill --manual
 ```
 
 标注模式中，人工反馈是自然语言偏好信号，既作为 APO 梯度的输入，也可导出为 DPO 微调数据。
@@ -264,13 +264,13 @@ ckpt/
 /restore writing-assistant_v1.2_20260306_140000       # 恢复
 
 # 命令行恢复
-python -m evoskill.main --ckpt ckpt/writing-assistant_v1.2_20260306_140000
+python -m treeskill.main --ckpt ckpt/writing-assistant_v1.2_20260306_140000
 ```
 
 ## 项目结构
 
 ```
-evoskill/
+treeskill/
 ├── core/                   # 核心抽象层
 │   ├── abc.py             # 抽象基类
 │   ├── optimizer.py       # TrainFreeOptimizer (TGD)

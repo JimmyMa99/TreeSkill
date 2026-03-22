@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from evoskill import (
+from treeskill import (
     # Config
     GlobalConfig,
     # Skill 管理
@@ -97,7 +97,7 @@ def example_2_use_adapter(config, skill):
 
     # 延迟导入 OpenAIAdapter（需要安装 openai tiktoken）
     try:
-        from evoskill import OpenAIAdapter
+        from treeskill import OpenAIAdapter
     except ImportError:
         print("⚠ OpenAIAdapter 导入failed")
         print("  需要安装依赖:")
@@ -199,7 +199,7 @@ def example_4_manual_feedback_and_gradient():
 
     # 使用 Mock 适配器计算梯度
     try:
-        from evoskill import MockAdapter
+        from treeskill import MockAdapter
         adapter = MockAdapter()
 
         print(f"→ 计算文本梯度...")
@@ -265,7 +265,7 @@ def example_5_load_and_continue():
 def main():
     """主函数"""
     print("\n" + "="*60)
-    print("EvoSkill - Load已存储 Skill 并使用 Config Example")
+    print("TreeSkill - Load已存储 Skill 并使用 Config Example")
     print("="*60)
 
     # Example 1: LoadConfig和 Skill

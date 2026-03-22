@@ -1,6 +1,6 @@
 # 树感知优化原理
 
-evoskill 支持将 Skill 组织为树形层级，并对整棵树进行递归优化。
+treeskill 支持将 Skill 组织为树形层级，并对整棵树进行递归优化。
 
 ## Skill 树结构
 
@@ -112,7 +112,7 @@ graph TD
 ## 使用示例
 
 ```python
-from evoskill import (
+from treeskill import (
     SkillTree,
     OpenAIAdapter,
     TreeAwareOptimizer,

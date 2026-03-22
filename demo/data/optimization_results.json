@@ -1,0 +1,17 @@
+{
+  "train_size": 10,
+  "eval_size": 10,
+  "test_size": 10,
+  "initial_accuracy": {
+    "train": 0.2,
+    "eval": 0.0,
+    "test": 0.1
+  },
+  "optimization": {
+    "initial_accuracy": 0.0,
+    "final_accuracy": 0.22652427096970945,
+    "improvement": 0.22652427096970945
+  },
+  "final_test_accuracy": 0.3265242709697095,
+  "improvement": 0.22652427096970948
+}

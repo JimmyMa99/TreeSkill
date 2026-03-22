@@ -12,7 +12,7 @@ pip install -e .
 ### 1. 创建Prompt
 
 ```python
-from evoskill.core import TextPrompt
+from treeskill.core import TextPrompt
 
 prompt = TextPrompt(
     content="你是一个AI助手。",
@@ -25,7 +25,7 @@ prompt = TextPrompt(
 ### 2. 收集经验
 
 ```python
-from evoskill.core import ConversationExperience, CompositeFeedback
+from treeskill.core import ConversationExperience, CompositeFeedback
 
 # 创建经验
 exp = ConversationExperience(
@@ -44,7 +44,7 @@ print(exp_with_feedback.is_failure)  # True
 ### 3. 使用MockAdapter测试
 
 ```python
-from evoskill import MockAdapter
+from treeskill import MockAdapter
 
 adapter = MockAdapter()
 
@@ -87,7 +87,7 @@ python tests/test_core_abstractions.py
 ## 多模态示例
 
 ```python
-from evoskill.core import MultimodalPrompt, MultimodalExperience
+from treeskill.core import MultimodalPrompt, MultimodalExperience
 
 # 创建多模态Prompt
 prompt = MultimodalPrompt(

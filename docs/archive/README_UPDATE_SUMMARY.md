@@ -12,14 +12,14 @@
 **位置**: 第 233-274 行
 
 **变更**:
-- 从 `evo_framework/` 改为 `evoskill/`
+- 从 `evo_framework/` 改为 `treeskill/`
 - 添加了完整的 v0.2.0 架构
 - 添加了核心组件职责表
 - 添加了向后兼容说明
 
 **新结构**:
 ```
-evoskill/                    # 核心模块
+treeskill/                    # 核心模块
 ├── core/                   # 核心抽象层
 │   ├── abc.py             # 抽象基类
 │   ├── prompts.py         # Prompt 实现
@@ -201,9 +201,9 @@ evo_framework/
 └── main.py
 ```
 
-**新版** (evoskill):
+**新版** (treeskill):
 ```
-evoskill/
+treeskill/
 ├── core/                   # 核心抽象层
 │   ├── abc.py
 │   ├── prompts.py
@@ -245,7 +245,7 @@ evoskill/
 grep -A 35 "## 项目结构" README.md
 ```
 
-**结果**: 显示 `evoskill/` 目录结构，包含 `core/`, `adapters/`, `registry.py`, `tools.py`
+**结果**: 显示 `treeskill/` 目录结构，包含 `core/`, `adapters/`, `registry.py`, `tools.py`
 
 ### 2. Mermaid 流程图 ✅
 
@@ -310,12 +310,12 @@ grep -A 6 "## 完整示例" README.md
 
 本次更新成功完成了以下目标：
 
-1. ✅ **修复项目结构** - 从 `evo_framework/` 更新为 `evoskill/`
+1. ✅ **修复项目结构** - 从 `evo_framework/` 更新为 `treeskill/`
 2. ✅ **添加 Mermaid 流程图** - 3 个完整的流程图展示不同优化模式
 3. ✅ **添加模式对比表** - 清晰对比交互式和完全自动化优化
 4. ✅ **添加完整示例** - 3 个实用的示例文件
 
-**README.md 现在准确反映了 evoskill v0.2.0 的架构和功能，并且用 Mermaid 流程图清晰展示了完整的优化流程。**
+**README.md 现在准确反映了 treeskill v0.2.0 的架构和功能，并且用 Mermaid 流程图清晰展示了完整的优化流程。**
 
 ---
 

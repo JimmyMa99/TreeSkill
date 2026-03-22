@@ -156,7 +156,7 @@ root (v1.1) - 主分类器
 ### 方法1: 快速开始（推荐配置）
 
 ```python
-from evoskill import TreeOptimizerConfig
+from treeskill import TreeOptimizerConfig
 
 config = TreeOptimizerConfig(
     auto_split=True,
