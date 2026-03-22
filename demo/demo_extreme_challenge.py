@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from tresskill import (
+from treeskill import (
     OpenAIAdapter,
     TreeAwareOptimizer,
     TreeOptimizerConfig,
@@ -32,8 +32,8 @@ from tresskill import (
     ConversationExperience,
     CompositeFeedback,
 )
-from tresskill.schema import Skill, SkillMeta
-from tresskill.skill_tree import SkillNode
+from treeskill.schema import Skill, SkillMeta
+from treeskill.skill_tree import SkillNode
 
 logging.basicConfig(
     level=logging.INFO,
@@ -240,13 +240,13 @@ def main():
     train_data, test_data, label_counts = load_full_dataset(csv_path, train_size=150, test_size=50)
 
     # Step 2: 创建API适配器
-    api_key = os.getenv("TRES_LLM_API_KEY")
-    base_url = os.getenv("TRES_LLM_BASE_URL", "https://api.siliconflow.cn/v1")
-    main_model = os.getenv("TRES_LLM_MODEL", "Qwen/Qwen2.5-14B-Instruct")
-    judge_model = os.getenv("TRES_LLM_JUDGE_MODEL", "Qwen/Qwen2.5-72B-Instruct")
+    api_key = os.getenv("TREE_LLM_API_KEY")
+    base_url = os.getenv("TREE_LLM_BASE_URL", "https://api.siliconflow.cn/v1")
+    main_model = os.getenv("TREE_LLM_MODEL", "Qwen/Qwen2.5-14B-Instruct")
+    judge_model = os.getenv("TREE_LLM_JUDGE_MODEL", "doubao/seed-2-0-flash")
 
     if not api_key:
-        logger.error("❌ 请设置 TRES_LLM_API_KEY")
+        logger.error("❌ 请设置 TREE_LLM_API_KEY")
         return
 
     main_adapter = OpenAIAdapter(model=main_model, api_key=api_key, base_url=base_url)

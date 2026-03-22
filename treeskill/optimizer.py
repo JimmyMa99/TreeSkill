@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 from rich.progress import (
@@ -232,15 +233,13 @@ class APOEngine:
                 parents.append(random.choice(beam))
             parents = parents[:beam_width]
 
-            # For each parent: gradient + branch_factor candidates
-            all_new: List[str] = []
-            for pidx, parent_prompt in enumerate(parents):
-                # Sample a fresh batch for this parent's gradient
+            # For each parent: gradient + branch_factor candidates (parallel)
+            def _evolve_parent(pidx_prompt):
+                pidx, parent_prompt = pidx_prompt
                 batch = random.sample(diagnosed, min(batch_size, len(diagnosed)))
                 parent_skill = skill.model_copy(update={"system_prompt": parent_prompt})
                 gradient = self._compute_gradient(parent_skill, batch)
 
-                # Generate branch_factor candidates in parallel
                 edit_batches = [
                     self._build_edit_messages(parent_skill, gradient)
                     for _ in range(branch_factor)
@@ -252,11 +251,16 @@ class APOEngine:
                     r.content if isinstance(r.content, str) else str(r.content)
                     for r in responses if r.content
                 ]
-                all_new.extend(new_prompts)
                 logger.info(
                     "  Parent %d/%d → %d candidates",
                     pidx + 1, len(parents), len(new_prompts),
                 )
+                return new_prompts
+
+            all_new: List[str] = []
+            with ThreadPoolExecutor(max_workers=len(parents)) as pool:
+                for prompts in pool.map(_evolve_parent, enumerate(parents)):
+                    all_new.extend(prompts)
 
             if not all_new:
                 logger.warning("Round %d: no candidates generated, keeping beam.", round_num)
