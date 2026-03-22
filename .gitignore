@@ -64,3 +64,6 @@ tmp/
 temp/
 *.tmp
 third_party
+# Optimization outputs
+demo/outputs/
+*.log
