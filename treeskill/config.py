@@ -56,6 +56,10 @@ class LLMConfig(BaseSettings):
         default="gpt-4o", description="Model used by the APO evaluator"
     )
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    extra_body: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Extra body parameters passed to the API (e.g. {'enable_thinking': false} for Qwen3).",
+    )
 
 
 class StorageConfig(BaseSettings):

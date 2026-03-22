@@ -39,15 +39,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────
-MAIN_MODEL = os.getenv("TREE_LLM_MODEL", "Qwen/Qwen3-8B")
+MAIN_MODEL = os.getenv("TREE_LLM_MODEL", "SilliconCloud/Qwen3.5-4B")
 JUDGE_MODEL = os.getenv("TREE_LLM_JUDGE_MODEL", "Qwen/Qwen2.5-72B-Instruct")
 DATA_PATH = "demo/data/intern_camp5.csv"
 
 # 只用 3 类，降低复杂度
 CATEGORIES = ["A", "E", "M"]  # 量子物理 / 机器人 / 计算机视觉
-TRAIN_PER_CAT = 8
+TRAIN_PER_CAT = 17
 TEST_PER_CAT = 4
-NUM_ROUNDS = 2
+NUM_ROUNDS = 3
 NUM_CANDIDATES = 2
 MAX_WORKERS = 8
 OUTPUT_DIR = Path("demo/outputs/tree-minimal-10min")
@@ -91,6 +91,10 @@ def load_data():
 
 # ── Classification ─────────────────────────────────────
 
+# Extra body params for the task model (e.g. disable thinking for Qwen3)
+EXTRA_BODY = {"enable_thinking": False}
+
+
 def classify(client: openai.OpenAI, prompt: str, question: str) -> str:
     try:
         r = client.chat.completions.create(
@@ -101,8 +105,9 @@ def classify(client: openai.OpenAI, prompt: str, question: str) -> str:
             ],
             max_tokens=10,
             temperature=0.3,
+            extra_body=EXTRA_BODY,
         )
-        ans = r.choices[0].message.content.strip().upper()
+        ans = (r.choices[0].message.content or "").strip().upper()
         for ch in ans:
             if ch in CATEGORIES:
                 return ch

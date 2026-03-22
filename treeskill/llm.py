@@ -186,6 +186,9 @@ class LLMClient:
                 "messages": api_messages,
                 "temperature": temperature,
             })
+            if self._config.llm.extra_body:
+                request_kwargs.setdefault("extra_body", {})
+                request_kwargs["extra_body"].update(self._config.llm.extra_body)
             if tool_defs:
                 request_kwargs["tools"] = tool_defs
                 request_kwargs["tool_choice"] = "auto"
@@ -277,6 +280,9 @@ class LLMClient:
             "messages": api_messages,
             "temperature": temperature,
         })
+        if self._config.llm.extra_body:
+            request_kwargs.setdefault("extra_body", {})
+            request_kwargs["extra_body"].update(self._config.llm.extra_body)
 
         completion = await self._acall_with_retry(
             self._async_client.chat.completions.create,
