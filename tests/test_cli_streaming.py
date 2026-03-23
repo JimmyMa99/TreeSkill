@@ -97,6 +97,7 @@ def test_chat_cli_streams_then_rerenders_final_markdown(tmp_path: Path):
     traces = cli._storage.load_all()
     assert len(traces) == 1
     assert traces[0].prediction.content == "Hello"
+    assert traces[0].session_id == cli._session_id
 
 
 def test_chat_cli_keeps_single_assistant_panel_after_streaming(tmp_path: Path):

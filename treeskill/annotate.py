@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import uuid
 from typing import List, Optional
 
 from rich.console import Console
@@ -94,6 +95,7 @@ class AnnotateCLI:
         self._dataset = dataset
         self._storage = storage
         self._auto = auto
+        self._session_id: Optional[str] = None
         self._console = Console(theme=_THEME)
 
     # ------------------------------------------------------------------
@@ -102,6 +104,7 @@ class AnnotateCLI:
 
     def run(self) -> List[Trace]:
         """Run the annotation loop. Returns all collected Traces."""
+        self._session_id = str(uuid.uuid4())
         samples = list(self._dataset)
         traces: List[Trace] = []
         skipped = 0
@@ -155,6 +158,7 @@ class AnnotateCLI:
 
             # Step 5: Store trace
             trace = Trace(
+                session_id=self._session_id,
                 inputs=compiled,
                 prediction=prediction,
                 feedback=feedback,
