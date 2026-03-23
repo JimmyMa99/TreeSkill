@@ -318,6 +318,137 @@ class LLMClient:
             f"Tool-calling loop exceeded the maximum number of iterations ({_MAX_TOOL_ITERATIONS})"
         )
 
+    def generate_stream(
+        self,
+        messages: List[Message],
+        *,
+        model: Optional[str] = None,
+        tools: Optional[Mapping[str, BaseTool]] = None,
+        on_tool_event: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        on_delta: Optional[Callable[[str], None]] = None,
+        **kwargs: Any,
+    ) -> Message:
+        """Stream assistant text deltas and return the final assistant message.
+
+        Preserves the existing tool-calling loop. Text deltas are emitted only
+        for assistant content, not for tool argument assembly.
+        """
+        model = model or self._config.llm.model
+        api_messages = [msg.to_api_dict() for msg in messages]
+        tool_defs = None
+        if tools:
+            tool_defs = [
+                {"type": "function", "function": tool.to_schema()}
+                for tool in tools.values()
+            ]
+        temperature = kwargs.pop("temperature", self._config.llm.temperature)
+
+        for _ in range(_MAX_TOOL_ITERATIONS):
+            request_kwargs: Dict[str, Any] = dict(kwargs)
+            request_kwargs.update({
+                "model": model,
+                "messages": api_messages,
+                "temperature": temperature,
+                "stream": True,
+            })
+            if tool_defs:
+                request_kwargs["tools"] = tool_defs
+                request_kwargs["tool_choice"] = "auto"
+
+            stream = self._call_with_retry(
+                self._client.chat.completions.create,
+                **request_kwargs,
+            )
+
+            text_parts: List[str] = []
+            tool_calls_by_index: Dict[int, Dict[str, Any]] = {}
+            for chunk in stream:
+                if not getattr(chunk, "choices", None):
+                    continue
+                delta = getattr(chunk.choices[0], "delta", None)
+                if delta is None:
+                    continue
+
+                content_delta = getattr(delta, "content", None)
+                if content_delta:
+                    text_parts.append(content_delta)
+                    if on_delta:
+                        on_delta(content_delta)
+
+                for tool_delta in getattr(delta, "tool_calls", None) or []:
+                    index = getattr(tool_delta, "index", 0) or 0
+                    tool_call = tool_calls_by_index.setdefault(
+                        index,
+                        {
+                            "id": "",
+                            "type": "function",
+                            "function": {"name": "", "arguments": ""},
+                        },
+                    )
+                    tool_id = getattr(tool_delta, "id", None)
+                    if tool_id:
+                        tool_call["id"] = tool_id
+
+                    function_delta = getattr(tool_delta, "function", None)
+                    if function_delta is None:
+                        continue
+
+                    function_name = getattr(function_delta, "name", None)
+                    if function_name:
+                        tool_call["function"]["name"] = function_name
+
+                    function_arguments = getattr(function_delta, "arguments", None)
+                    if function_arguments:
+                        tool_call["function"]["arguments"] += function_arguments
+
+            assistant_content = "".join(text_parts)
+            tool_calls = [
+                tool_calls_by_index[index]
+                for index in sorted(tool_calls_by_index)
+            ]
+
+            if not tool_calls:
+                return Message(role="assistant", content=assistant_content)
+
+            api_messages.append({
+                "role": "assistant",
+                "content": assistant_content,
+                "tool_calls": tool_calls,
+            })
+
+            for call in tool_calls:
+                tool_name = call["function"]["name"]
+                tool_args_raw = call["function"]["arguments"]
+
+                if on_tool_event:
+                    on_tool_event("start", {"name": tool_name, "arguments": tool_args_raw})
+                try:
+                    parsed_args = json.loads(tool_args_raw or "{}")
+                except json.JSONDecodeError as exc:
+                    result = {"error": f"Invalid tool arguments: {exc}"}
+                else:
+                    tool = tools.get(tool_name) if tools else None
+                    if tool is None:
+                        result = {"error": f"Unknown tool: {tool_name}"}
+                    else:
+                        try:
+                            result = tool.execute(**parsed_args)
+                        except Exception as exc:
+                            result = {"error": str(exc)}
+
+                if on_tool_event:
+                    on_tool_event("finish", {"name": tool_name, "result": format_tool_result(result)})
+
+                api_messages.append({
+                    "role": "tool",
+                    "tool_call_id": call["id"],
+                    "content": format_tool_result(result),
+                })
+
+        raise RuntimeError(
+            f"Tool-calling loop exceeded the maximum number of iterations ({_MAX_TOOL_ITERATIONS})"
+        )
+
     # ------------------------------------------------------------------
     # Async API
     # ------------------------------------------------------------------
