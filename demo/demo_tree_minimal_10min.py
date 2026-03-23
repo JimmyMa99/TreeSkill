@@ -228,17 +228,24 @@ def main():
 
     engine._score_fn = real_score_fn
 
-    # Create初始 skill 树
+    # 初始化 skill 树（已有则续跑）
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    root_skill = Skill(
-        name="paper-classifier",
-        description="Classify papers into A (Quantum Physics), E (Robotics), M (Computer Vision).",
-        system_prompt=BAD_BASELINE,
-        target="Improve accuracy by adding category descriptions and classification hints",
-        version="v1.0",
-    )
-    save_skill(root_skill, OUTPUT_DIR)
-    tree = SkillTree.load(OUTPUT_DIR)
+    skill_file = OUTPUT_DIR / "SKILL.md"
+
+    if skill_file.exists():
+        logger.info("检测到已有 skill 树，续跑模式")
+        tree = SkillTree.load(OUTPUT_DIR)
+        logger.info(f"  根节点版本: {tree.root.skill.version}")
+    else:
+        root_skill = Skill(
+            name="paper-classifier",
+            description="Classify papers into A (Quantum Physics), E (Robotics), M (Computer Vision).",
+            system_prompt=BAD_BASELINE,
+            target="Improve accuracy by adding category descriptions and classification hints",
+            version="v1.0",
+        )
+        save_skill(root_skill, OUTPUT_DIR)
+        tree = SkillTree.load(OUTPUT_DIR)
 
     # ── 基线 ──
     logger.info("\n--- 基线评估 (故意很烂的 prompt) ---")
