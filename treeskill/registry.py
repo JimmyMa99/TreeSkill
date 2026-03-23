@@ -148,7 +148,9 @@ class TreeSkillRegistry:
             return
         self._builtins_loaded = True
         try:
-            import treeskill.builtin_scorers  # noqa: F401
+            import importlib
+            import treeskill.builtin_scorers as _mod
+            importlib.reload(_mod)
         except ImportError:
             pass
 
@@ -686,6 +688,7 @@ class TreeSkillRegistry:
         self._default_optimizer = None
         self._default_scorer = None
         self._config.clear()
+        self._builtins_loaded = False
         logger.info("Registry reset")
 
     def summary(self) -> Dict[str, Any]:
