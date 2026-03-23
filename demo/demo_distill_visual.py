@@ -150,15 +150,22 @@ STANDALONE_HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-    const {{ motion, AnimatePresence, useMotionValue, useTransform }} = window["framer-motion"] || {{}};
+    const {{ useState, useEffect, useRef, useCallback, useMemo }} = React;
+    const {{ motion, AnimatePresence, useMotionValue, useTransform, useInView, useAnimation }} = window["framer-motion"] || {{}};
     {code}
 
-    // Try to render if there's a default export or named component
-    const components = [App, Navbar, Hero, HeroSection, Card, ProfileCard, TeamMemberCard,
-                        Reveal, RevealSection, ScrollReveal, FadeIn].filter(c => typeof c === 'function');
-    if (components.length > 0) {{
-        const Root = components[0];
-        ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+    // Try to render — find first defined component
+    const _names = ['App', 'Navbar', 'Hero', 'HeroSection', 'Card', 'ProfileCard',
+                    'TeamMemberCard', 'Reveal', 'RevealSection', 'ScrollReveal',
+                    'FadeIn', 'ContactForm', 'Footer', 'Page', 'Main', 'Component'];
+    let _Root = null;
+    for (const _n of _names) {{
+        try {{ if (typeof eval(_n) === 'function') {{ _Root = eval(_n); break; }} }} catch(e) {{}}
+    }}
+    if (_Root) {{
+        ReactDOM.createRoot(document.getElementById('root')).render(<_Root />);
+    }} else {{
+        document.getElementById('root').innerHTML = '<p style="padding:20px;color:red">No component found to render</p>';
     }}
     </script>
 </body>
@@ -187,9 +194,13 @@ def save_html(code: str, task_id: str, model_name: str, output_dir: Path) -> Pat
     # Extract just the code from markdown
     clean_code = extract_code(code)
 
-    # Remove import/export statements (CDN provides these)
+    # Remove import statements (CDN provides these)
     clean_code = re.sub(r'^import\s+.*?;\s*$', '', clean_code, flags=re.MULTILINE)
+    # Remove all export keywords
     clean_code = re.sub(r'^export\s+default\s+', '', clean_code, flags=re.MULTILINE)
+    clean_code = re.sub(r'^export\s+', '', clean_code, flags=re.MULTILINE)
+    # Remove "use client" directive
+    clean_code = clean_code.replace('"use client";', '').replace("'use client';", '')
 
     html = STANDALONE_HTML_TEMPLATE.format(
         task_id=task_id, model=safe_model, code=clean_code,
@@ -211,7 +222,7 @@ def screenshot_html(html_path: Path, output_dir: Path) -> Path:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page(viewport={"width": 1280, "height": 720})
             page.goto(f"file://{html_path.resolve()}")
-            page.wait_for_timeout(2000)  # Wait for animations/CDN load
+            page.wait_for_timeout(5000)  # Wait for CDN load + animations
             page.screenshot(path=str(png_path), full_page=False)
             browser.close()
         logger.info(f"  Screenshot: {png_path.name}")
