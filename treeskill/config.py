@@ -64,6 +64,12 @@ class LLMConfig(BaseSettings):
         description="Extra body parameters passed to the API (e.g. {'enable_thinking': false} for Qwen3).",
     )
 
+    # ── Actor protocol ──
+    protocol: str = Field(
+        default="openai",
+        description="API protocol for actor: 'openai' or 'anthropic'.",
+    )
+
     # ── Judge ──
     judge_model: str = Field(
         default="gpt-4o", description="Model used by the APO evaluator"
@@ -83,6 +89,10 @@ class LLMConfig(BaseSettings):
     judge_extra_body: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Judge extra body params. Falls back to main extra_body when empty.",
+    )
+    judge_protocol: Optional[str] = Field(
+        default=None,
+        description="Judge API protocol: 'openai' or 'anthropic'. Falls back to main protocol.",
     )
 
     # ── Rewrite ──
@@ -105,6 +115,10 @@ class LLMConfig(BaseSettings):
     rewrite_extra_body: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Rewrite extra body params. Falls back to judge, then main.",
+    )
+    rewrite_protocol: Optional[str] = Field(
+        default=None,
+        description="Rewrite API protocol. Falls back to judge, then main.",
     )
 
 

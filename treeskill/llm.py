@@ -71,10 +71,10 @@ def _get_retry_after(exc: Exception) -> Optional[float]:
 
 
 class LLMClient:
-    """Stateless wrapper around the OpenAI Python SDK with retry support.
+    """Multi-protocol wrapper supporting OpenAI and Anthropic APIs.
 
     Supports separate API endpoints for actor / judge / rewrite roles.
-    Clients are lazily created and cached by (base_url, api_key) pair.
+    Clients are lazily created and cached by (protocol, base_url, api_key).
 
     Parameters
     ----------
@@ -84,12 +84,12 @@ class LLMClient:
 
     def __init__(self, config: GlobalConfig) -> None:
         self._config = config
-        # Cache clients by (base_url, api_key) to avoid duplicates
-        self._clients: Dict[tuple, openai.OpenAI] = {}
-        self._async_clients: Dict[tuple, openai.AsyncOpenAI] = {}
+        # Cache clients by (protocol, base_url, api_key) to avoid duplicates
+        self._clients: Dict[tuple, Any] = {}
+        self._async_clients: Dict[tuple, Any] = {}
 
     def _resolve_endpoint(self, role: Optional[str] = None):
-        """Resolve (api_key, base_url, model, temperature, extra_body) for a role.
+        """Resolve (api_key, base_url, model, temperature, extra_body, protocol).
 
         Roles: "actor" (default), "judge", "rewrite".
         Falls back: rewrite → judge → actor.
@@ -102,8 +102,8 @@ class LLMClient:
             model = llm.judge_model
             temperature = llm.judge_temperature if llm.judge_temperature is not None else llm.temperature
             extra_body = llm.judge_extra_body if llm.judge_extra_body is not None else llm.extra_body
+            protocol = llm.judge_protocol or llm.protocol
         elif role == "rewrite":
-            # Rewrite falls back to judge, then actor
             api_key = (llm.rewrite_api_key or llm.judge_api_key or llm.api_key).get_secret_value()
             base_url = llm.rewrite_base_url or llm.judge_base_url or llm.base_url
             model = llm.rewrite_model or llm.judge_model
@@ -117,30 +117,112 @@ class LLMClient:
                 else llm.judge_extra_body if llm.judge_extra_body is not None
                 else llm.extra_body
             )
+            protocol = llm.rewrite_protocol or llm.judge_protocol or llm.protocol
         else:  # actor / default
             api_key = llm.api_key.get_secret_value()
             base_url = llm.base_url
             model = llm.model
             temperature = llm.temperature
             extra_body = llm.extra_body
+            protocol = llm.protocol
 
-        return api_key, base_url, model, temperature, extra_body
+        return api_key, base_url, model, temperature, extra_body, protocol
 
-    def _get_client(self, role: Optional[str] = None) -> openai.OpenAI:
+    def _get_client(self, role: Optional[str] = None) -> Any:
         """Get or create a sync client for the given role."""
-        api_key, base_url, _, _, _ = self._resolve_endpoint(role)
-        key = (base_url, api_key)
+        api_key, base_url, _, _, _, protocol = self._resolve_endpoint(role)
+        key = (protocol, base_url, api_key)
         if key not in self._clients:
-            self._clients[key] = openai.OpenAI(api_key=api_key, base_url=base_url)
+            if protocol == "anthropic":
+                import anthropic
+                self._clients[key] = anthropic.Anthropic(
+                    api_key=api_key, base_url=base_url,
+                )
+            else:
+                self._clients[key] = openai.OpenAI(api_key=api_key, base_url=base_url)
         return self._clients[key]
 
-    def _get_async_client(self, role: Optional[str] = None) -> openai.AsyncOpenAI:
+    def _get_async_client(self, role: Optional[str] = None) -> Any:
         """Get or create an async client for the given role."""
-        api_key, base_url, _, _, _ = self._resolve_endpoint(role)
-        key = (base_url, api_key)
+        api_key, base_url, _, _, _, protocol = self._resolve_endpoint(role)
+        key = (protocol, base_url, api_key)
         if key not in self._async_clients:
-            self._async_clients[key] = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
+            if protocol == "anthropic":
+                import anthropic
+                self._async_clients[key] = anthropic.AsyncAnthropic(
+                    api_key=api_key, base_url=base_url,
+                )
+            else:
+                self._async_clients[key] = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
         return self._async_clients[key]
+
+    # ------------------------------------------------------------------
+    # Anthropic protocol adapters
+    # ------------------------------------------------------------------
+
+    def _anthropic_generate(
+        self, client: Any, model: str, messages: List[Message],
+        temperature: float, extra_body: Optional[Dict] = None,
+    ) -> Message:
+        """Call Anthropic Messages API and return a Message."""
+        api_messages = [msg.to_api_dict() for msg in messages]
+        # Extract system message
+        system_text = ""
+        filtered = []
+        for m in api_messages:
+            if m["role"] == "system":
+                system_text = m["content"] if isinstance(m["content"], str) else str(m["content"])
+            else:
+                filtered.append(m)
+
+        kwargs: Dict[str, Any] = {
+            "model": model,
+            "messages": filtered,
+            "max_tokens": 4096,
+            "temperature": temperature,
+        }
+        if system_text:
+            kwargs["system"] = system_text
+
+        resp = self._call_with_retry(client.messages.create, **kwargs)
+
+        # Extract text from content blocks (skip thinking blocks)
+        text_parts = []
+        for block in resp.content:
+            if getattr(block, "type", None) == "text":
+                text_parts.append(block.text)
+        return Message(role="assistant", content="".join(text_parts).strip())
+
+    async def _anthropic_agenerate(
+        self, client: Any, model: str, messages: List[Message],
+        temperature: float, extra_body: Optional[Dict] = None,
+    ) -> Message:
+        """Async Anthropic Messages API call."""
+        api_messages = [msg.to_api_dict() for msg in messages]
+        system_text = ""
+        filtered = []
+        for m in api_messages:
+            if m["role"] == "system":
+                system_text = m["content"] if isinstance(m["content"], str) else str(m["content"])
+            else:
+                filtered.append(m)
+
+        kwargs: Dict[str, Any] = {
+            "model": model,
+            "messages": filtered,
+            "max_tokens": 4096,
+            "temperature": temperature,
+        }
+        if system_text:
+            kwargs["system"] = system_text
+
+        resp = await self._acall_with_retry(client.messages.create, **kwargs)
+
+        text_parts = []
+        for block in resp.content:
+            if getattr(block, "type", None) == "text":
+                text_parts.append(block.text)
+        return Message(role="assistant", content="".join(text_parts).strip())
 
     # ------------------------------------------------------------------
     # Retry wrapper
@@ -230,8 +312,15 @@ class LLMClient:
         Automatically retries on transient API errors (429, 5xx) with
         exponential backoff.
         """
-        _, _, role_model, role_temp, role_extra = self._resolve_endpoint(role)
+        _, _, role_model, role_temp, role_extra, role_protocol = self._resolve_endpoint(role)
         model = model or role_model
+        temperature = kwargs.pop("temperature", role_temp)
+        client = self._get_client(role)
+
+        # Anthropic protocol — no tool loop, direct call
+        if role_protocol == "anthropic":
+            return self._anthropic_generate(client, model, messages, temperature, role_extra)
+
         api_messages = [msg.to_api_dict() for msg in messages]
         tool_defs = None
         if tools:
@@ -239,8 +328,6 @@ class LLMClient:
                 {"type": "function", "function": tool.to_schema()}
                 for tool in tools.values()
             ]
-        temperature = kwargs.pop("temperature", role_temp)
-        client = self._get_client(role)
 
         for _ in range(_MAX_TOOL_ITERATIONS):
             request_kwargs: Dict[str, Any] = dict(kwargs)
@@ -334,11 +421,16 @@ class LLMClient:
 
         Used for parallel candidate generation and scoring in APO.
         """
-        _, _, role_model, role_temp, role_extra = self._resolve_endpoint(role)
+        _, _, role_model, role_temp, role_extra, role_protocol = self._resolve_endpoint(role)
         model = model or role_model
-        api_messages = [msg.to_api_dict() for msg in messages]
         temperature = kwargs.pop("temperature", role_temp)
         async_client = self._get_async_client(role)
+
+        # Anthropic protocol
+        if role_protocol == "anthropic":
+            return await self._anthropic_agenerate(async_client, model, messages, temperature, role_extra)
+
+        api_messages = [msg.to_api_dict() for msg in messages]
 
         request_kwargs: Dict[str, Any] = dict(kwargs)
         request_kwargs.update({
