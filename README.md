@@ -2,6 +2,8 @@
 
 > **Note**: 本项目由于与其他仓库重名，已迁移至 [TreeSkill](https://github.com/JimmyMa99/TreeSkill)，后续所有更新均在 TreeSkill 进行。
 
+> **Note**: 本项目原名 **EvoSkill**，因与其他仓库重名，已迁移至此仓库。后续所有更新均在 [TreeSkill](https://github.com/JimmyMa99/TreeSkill) 进行。
+
 [English](./docs_en/README.md) | 中文
 
 **Train-Free Agent Prompt 自进化框架**
