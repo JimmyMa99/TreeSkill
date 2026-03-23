@@ -11,7 +11,7 @@
 | 深度学习概念 | TreeSkill 对应 |
 |-------------|-------------------|
 | 模型权重 | System Prompt（`Skill.system_prompt`） |
-| 训练数据 | 交互历史（`Trace` 对象，存在 JSONL 中） |
+| 训练数据 | 交互历史（`Trace` 对象，存在 JSONL 中；`trace.id` 标识单条交互，`session_id` 标识同一运行会话） |
 | Loss / 梯度 | 用户反馈（`Feedback.critique`）→ Judge 模型的失败分析 |
 | 反向传播 | Judge 模型分析 → 重写 prompt |
 | 学习率 / batch size | `APOConfig.gradient_accumulation_steps` |
@@ -31,8 +31,8 @@ compile_messages(skill, history)    ← skill.py
 LLMClient.generate(messages)        ← llm.py
     │  调用 OpenAI 兼容 API
     ▼
-Trace(inputs, prediction)           ← schema.py
-    │  记录本次交互
+Trace(id, session_id, inputs, prediction) ← schema.py
+    │  记录本次交互；`session_id` 用来把同一运行会话的多条 Trace 关联起来
     ▼
 TraceStorage.append(trace)          ← storage.py
     │  追加写入 JSONL
@@ -112,6 +112,7 @@ SkillTree.save(directory)
 
 ### storage.py — Trace 存储
 - 追加写入 JSONL，每行一个 JSON 对象
+- `Trace.id` 仍然是单条交互的唯一标识；`session_id` 用来把同一次交互会话中的多条 Trace 归组
 - `get_feedback_samples(min_score, max_score)` 筛选"差评"样本给 APO
 - `get_dpo_pairs()` 提取有 correction 的 traces 为 DPO 偏好对
 - `export_dpo(output_path)` 导出 DPO JSONL（prompt/chosen/rejected）
@@ -182,7 +183,7 @@ ckpt/
     ├── skill/              # 完整 skill（单文件或整棵树）
     │   └── root.yaml
     └── mem/
-        ├── traces.jsonl    # 交互历史
+        ├── traces.jsonl    # 交互历史（每行一个 Trace；同一 session_id 可能对应多行）
         └── meta.json       # 优化轮次、版本、时间等
 ```
 
