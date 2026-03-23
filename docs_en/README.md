@@ -1,5 +1,7 @@
 # TreeSkill
 
+> **Note**: This project was formerly named **EvoSkill**. It has been renamed to avoid conflicts with another repository. All future updates will be made here at [TreeSkill](https://github.com/JimmyMa99/TreeSkill).
+
 English | [中文](../README.md)
 
 **Train-Free Skill Optimization Framework for LLMs**
