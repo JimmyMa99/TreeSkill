@@ -36,6 +36,8 @@ TreeSkill draws an analogy between LLM prompt optimization and deep learning's t
   - **HTTP API** -- Declarative invocation of any REST endpoint
   - **MCP Server** -- Tool invocation compatible with [Model Context Protocol](https://modelcontextprotocol.io/)
 - **Checkpoint Resume** -- Resume from last progress after interruption, without wasting completed API calls
+- **Plugin Registry** -- Customize every part of the optimization pipeline with `@scorer`, `@gradient`, `@rewriter`, `@skill_format` decorators ([Guide](../docs_en/REGISTRY_GUIDE.md))
+- **Multi-Endpoint** -- Configure separate API endpoints, models, and protocols (OpenAI / Anthropic) for Actor / Judge / Rewrite roles
 
 ## Installation
 
