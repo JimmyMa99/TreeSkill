@@ -42,23 +42,69 @@ def _merge_settings_section(
 
 
 class LLMConfig(BaseSettings):
-    """OpenAI-compatible LLM connection settings."""
+    """OpenAI-compatible LLM connection settings.
+
+    Supports separate endpoints for actor / judge / rewrite roles.
+    Judge and rewrite fields are optional — when not set, they fall
+    back to the main (actor) ``api_key`` / ``base_url``.
+    """
 
     model_config = _settings_config(env_prefix="TREE_LLM_")
 
+    # ── Actor (default) ──
     api_key: SecretStr = Field(default=SecretStr(""), description="OpenAI API key")
     base_url: str = Field(
         default="https://api.openai.com/v1",
         description="API base URL (change for Azure / local proxies)",
     )
     model: str = Field(default="gpt-4o", description="Default chat model")
-    judge_model: str = Field(
-        default="gpt-4o", description="Model used by the APO evaluator"
-    )
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     extra_body: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Extra body parameters passed to the API (e.g. {'enable_thinking': false} for Qwen3).",
+    )
+
+    # ── Judge ──
+    judge_model: str = Field(
+        default="gpt-4o", description="Model used by the APO evaluator"
+    )
+    judge_base_url: Optional[str] = Field(
+        default=None,
+        description="Judge API base URL. Falls back to main base_url when empty.",
+    )
+    judge_api_key: Optional[SecretStr] = Field(
+        default=None,
+        description="Judge API key. Falls back to main api_key when empty.",
+    )
+    judge_temperature: Optional[float] = Field(
+        default=None,
+        description="Judge temperature. Falls back to main temperature when empty.",
+    )
+    judge_extra_body: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Judge extra body params. Falls back to main extra_body when empty.",
+    )
+
+    # ── Rewrite ──
+    rewrite_model: Optional[str] = Field(
+        default=None,
+        description="Model used for prompt rewriting. Falls back to judge_model when empty.",
+    )
+    rewrite_base_url: Optional[str] = Field(
+        default=None,
+        description="Rewrite API base URL. Falls back to judge endpoint, then main.",
+    )
+    rewrite_api_key: Optional[SecretStr] = Field(
+        default=None,
+        description="Rewrite API key. Falls back to judge endpoint, then main.",
+    )
+    rewrite_temperature: Optional[float] = Field(
+        default=None,
+        description="Rewrite temperature. Falls back to judge, then main.",
+    )
+    rewrite_extra_body: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Rewrite extra body params. Falls back to judge, then main.",
     )
 
 

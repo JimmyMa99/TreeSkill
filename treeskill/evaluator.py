@@ -130,7 +130,7 @@ class Evaluator:
         ]
         return self._llm.generate_batch(
             message_batches,
-            model=self._config.llm.model,
+            role="actor",
         )
 
     # ------------------------------------------------------------------
@@ -144,17 +144,12 @@ class Evaluator:
         rubric: str,
     ) -> List[Feedback]:
         """Score all predictions against ground truths using the Judge LLM."""
-        judge_model = (
-            self._config.reward.model
-            or self._config.llm.judge_model
-        )
-
         judge_batches = [
             self._build_judge_messages(sample, prediction, rubric)
             for sample, prediction in zip(samples, predictions)
         ]
         responses = self._llm.generate_batch(
-            judge_batches, model=judge_model,
+            judge_batches, role="judge",
         )
 
         feedbacks: List[Feedback] = []

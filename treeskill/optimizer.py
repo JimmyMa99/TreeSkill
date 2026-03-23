@@ -179,7 +179,7 @@ class APOEngine:
             for _ in range(num_candidates)
         ]
         responses = self._llm.generate_batch(
-            edit_batches, model=self._config.llm.judge_model,
+            edit_batches, role="rewrite",
         )
         candidates = [
             r.content if isinstance(r.content, str) else str(r.content)
@@ -257,7 +257,7 @@ class APOEngine:
                     for _ in range(branch_factor)
                 ]
                 responses = self._llm.generate_batch(
-                    edit_batches, model=self._config.llm.judge_model,
+                    edit_batches, role="rewrite",
                 )
                 new_prompts = [
                     r.content if isinstance(r.content, str) else str(r.content)
@@ -373,7 +373,7 @@ class APOEngine:
             ),
         ]
         response = self._llm.generate(
-            messages, model=self._config.llm.judge_model
+            messages, role="judge"
         )
         return response.content if isinstance(response.content, str) else str(response.content)
 
@@ -411,7 +411,7 @@ class APOEngine:
         """Ask the judge model to rewrite the system prompt (sync, single call)."""
         messages = self._build_edit_messages(skill, gradient)
         response = self._llm.generate(
-            messages, model=self._config.llm.judge_model
+            messages, role="rewrite"
         )
         return response.content if isinstance(response.content, str) else str(response.content)
 
@@ -522,7 +522,7 @@ class APOEngine:
         """Score a prompt (sync, single call). Used by non-batch code paths."""
         messages = self._build_score_messages(prompt, traces)
         response = self._llm.generate(
-            messages, model=self._config.llm.judge_model
+            messages, role="judge"
         )
         raw = response.content if isinstance(response.content, str) else str(response.content)
         return self._parse_score(raw)
@@ -543,7 +543,7 @@ class APOEngine:
         # Fallback: judge-based scoring
         batches = [self._build_score_messages(p, traces) for p in prompts]
         responses = self._llm.generate_batch(
-            batches, model=self._config.llm.judge_model,
+            batches, role="judge",
         )
         return [
             self._parse_score(
@@ -597,7 +597,7 @@ class APOEngine:
             ),
         ]
         response = self._llm.generate(
-            messages, model=self._config.llm.judge_model
+            messages, role="judge"
         )
         raw = response.content if isinstance(response.content, str) else str(response.content)
         raw = raw.strip()
@@ -642,7 +642,7 @@ class APOEngine:
             ),
         ]
         response = self._llm.generate(
-            messages, model=self._config.llm.judge_model
+            messages, role="rewrite"
         )
         raw = response.content if isinstance(response.content, str) else str(response.content)
         raw = raw.strip()
