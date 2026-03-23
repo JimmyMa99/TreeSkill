@@ -163,6 +163,7 @@ class LLMClient:
     def _anthropic_generate(
         self, client: Any, model: str, messages: List[Message],
         temperature: float, extra_body: Optional[Dict] = None,
+        max_tokens: int = 8192,
     ) -> Message:
         """Call Anthropic Messages API and return a Message."""
         api_messages = [msg.to_api_dict() for msg in messages]
@@ -178,7 +179,7 @@ class LLMClient:
         kwargs: Dict[str, Any] = {
             "model": model,
             "messages": filtered,
-            "max_tokens": 4096,
+            "max_tokens": max_tokens,
             "temperature": temperature,
         }
         if system_text:
@@ -196,6 +197,7 @@ class LLMClient:
     async def _anthropic_agenerate(
         self, client: Any, model: str, messages: List[Message],
         temperature: float, extra_body: Optional[Dict] = None,
+        max_tokens: int = 8192,
     ) -> Message:
         """Async Anthropic Messages API call."""
         api_messages = [msg.to_api_dict() for msg in messages]
@@ -210,7 +212,7 @@ class LLMClient:
         kwargs: Dict[str, Any] = {
             "model": model,
             "messages": filtered,
-            "max_tokens": 4096,
+            "max_tokens": max_tokens,
             "temperature": temperature,
         }
         if system_text:

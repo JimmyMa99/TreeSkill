@@ -1,0 +1,162 @@
+[
+  {
+    "id": "design-01",
+    "category": "design",
+    "difficulty": "easy",
+    "task": "Write a React component for a responsive navbar with a logo, 4 nav links, and a CTA button. Use Tailwind CSS. Include mobile hamburger menu.",
+    "key_rules": ["no Inter font", "no emoji", "max-w-[1400px] or max-w-7xl", "use client directive"],
+    "split": "train"
+  },
+  {
+    "id": "design-02",
+    "category": "design",
+    "difficulty": "easy",
+    "task": "Write a React card component for displaying a team member profile. Include name, role, bio, and avatar. Use Tailwind CSS with glassmorphism effect.",
+    "key_rules": ["backdrop-blur + border-white/10", "no pure black #000", "rounded corners", "tracking-tight headers"],
+    "split": "train"
+  },
+  {
+    "id": "design-03",
+    "category": "design",
+    "difficulty": "medium",
+    "task": "Write a pricing section with 3 tiers (Free, Pro, Enterprise) using a bento grid layout. Each tier should have a feature list, price, and CTA button. Use Tailwind CSS and React.",
+    "key_rules": ["bento layout with rounded-[2.5rem]", "no 3-column equal card rows", "bg-[#f9fafb] background", "Geist or Satoshi font"],
+    "split": "train"
+  },
+  {
+    "id": "design-04",
+    "category": "design",
+    "difficulty": "medium",
+    "task": "Write a React form component for a contact page with name, email, message fields and a submit button. Include loading, error, and success states.",
+    "key_rules": ["label above input", "error below input", "gap-2 for input blocks", "skeleton loading state", "scale-[0.98] tactile feedback"],
+    "split": "val"
+  },
+  {
+    "id": "motion-01",
+    "category": "motion",
+    "difficulty": "easy",
+    "task": "Write a React component that fades in and slides up when it enters the viewport. Use Framer Motion's whileInView.",
+    "key_rules": ["use Framer Motion not GSAP for UI enter", "GPU-only: transform + opacity", "respect prefers-reduced-motion"],
+    "split": "train"
+  },
+  {
+    "id": "motion-02",
+    "category": "motion",
+    "difficulty": "medium",
+    "task": "Write a React feature grid component where 6 items stagger in sequentially when the section enters the viewport. Use Framer Motion.",
+    "key_rules": ["staggerChildren", "whileInView", "never animate width/height directly", "stagger ≤ reasonable delay"],
+    "split": "train"
+  },
+  {
+    "id": "motion-03",
+    "category": "motion",
+    "difficulty": "hard",
+    "task": "Write a horizontal scroll section using GSAP ScrollTrigger. The section should pin and scroll horizontally as the user scrolls vertically. Include 4 content panels.",
+    "key_rules": ["GSAP for scroll pinning not Framer", "useEffect cleanup with ctx.revert()", "disable pin on mobile < 768px", "will-change only during animation"],
+    "split": "train"
+  },
+  {
+    "id": "motion-04",
+    "category": "motion",
+    "difficulty": "medium",
+    "task": "Write a magnetic button component in React that follows the cursor when hovered. The button should smoothly attract toward the mouse position.",
+    "key_rules": ["useMotionValue/useTransform not useState", "Framer Motion for UI interaction", "GPU-only transform", "spring physics"],
+    "split": "val"
+  },
+  {
+    "id": "copy-01",
+    "category": "copywriting",
+    "difficulty": "easy",
+    "task": "Write a React hero section for a project management SaaS product. Include a compelling headline, subheadline, CTA button, and trust badges. The copy should follow the AIDA framework.",
+    "key_rules": ["AIDA: Attention Interest Desire Action", "no Lorem ipsum", "no emoji", "real persuasive copy"],
+    "split": "train"
+  },
+  {
+    "id": "copy-02",
+    "category": "copywriting",
+    "difficulty": "medium",
+    "task": "Write a features section for an AI writing tool. Include 4 feature blocks, each with an icon area, headline, and description. Copy should use the FAB framework (Features, Advantages, Benefits).",
+    "key_rules": ["FAB framework", "no Lorem ipsum", "Phosphor or Radix icons reference", "no emoji"],
+    "split": "train"
+  },
+  {
+    "id": "copy-03",
+    "category": "copywriting",
+    "difficulty": "medium",
+    "task": "Write a CTA section with objection handling for a premium design course. Include headline, 3 objection-busting bullet points, price, and two CTAs (primary and secondary).",
+    "key_rules": ["PAS framework: Problem Agitate Solve", "objection handling", "no emoji", "real copy not placeholder"],
+    "split": "val"
+  },
+  {
+    "id": "combo-01",
+    "category": "combo",
+    "difficulty": "medium",
+    "task": "Write a testimonial carousel section in React. Include 3 testimonials with avatar, name, role, company, and quote. Use Framer Motion for slide transitions. Write real testimonial copy.",
+    "key_rules": ["Framer for UI transitions", "no placeholder images or URLs", "real copy", "AnimatePresence for exit animations"],
+    "split": "train"
+  },
+  {
+    "id": "combo-02",
+    "category": "combo",
+    "difficulty": "hard",
+    "task": "Write a split-screen hero section for a fitness app. Left side: compelling copy with AIDA framework, CTA button with magnetic hover effect. Right side: a parallax tilt card showing app screenshot placeholder using a colored div. Include scroll reveal animation.",
+    "key_rules": ["split-screen when VARIANCE > 4", "magnetic button with useMotionValue", "AIDA copy", "no placeholder URLs", "Framer for UI + tilt"],
+    "split": "train"
+  },
+  {
+    "id": "combo-03",
+    "category": "combo",
+    "difficulty": "hard",
+    "task": "Write a complete landing page footer with 4 columns: product links, resources links, company links, and a newsletter signup form. Include animated hover states on links and a subtle gradient border on the newsletter input.",
+    "key_rules": ["CSS-only hover states", "no emoji", "proper form layout", "max-w-7xl", "real link text not lorem"],
+    "split": "train"
+  },
+  {
+    "id": "combo-04",
+    "category": "combo",
+    "difficulty": "hard",
+    "task": "Write a dashboard stats overview component with 4 stat cards in a bento grid. Each card shows a metric name, value, trend arrow, and a mini sparkline chart (use a simple SVG path). Include stagger animation on mount.",
+    "key_rules": ["bento grid layout", "staggerChildren", "no neon glows", "no Serif on dashboard", "skeleton loading state"],
+    "split": "val"
+  },
+  {
+    "id": "perf-01",
+    "category": "motion",
+    "difficulty": "medium",
+    "task": "Write a React component with infinite floating particles as a decorative background. The particles should be GPU-accelerated and respect prefers-reduced-motion. Include proper cleanup.",
+    "key_rules": ["React.memo isolation", "will-change during animation only", "prefers-reduced-motion", "useEffect cleanup", "cap particles on mobile"],
+    "split": "train"
+  },
+  {
+    "id": "design-05",
+    "category": "design",
+    "difficulty": "hard",
+    "task": "Write a React component for an asymmetric hero section with a large headline on the left (60% width) and a stacked card layout on the right (40% width). Use CSS Grid, not flexbox percentage math.",
+    "key_rules": ["CSS Grid not flex percentage", "min-h-[100dvh] not h-screen", "asymmetric layout", "tracking-tighter on headline"],
+    "split": "test"
+  },
+  {
+    "id": "motion-05",
+    "category": "motion",
+    "difficulty": "hard",
+    "task": "Write a scroll-linked text reveal component in React. As the user scrolls, each word in a paragraph should progressively change from gray to black. Use CSS animation-timeline: scroll() for zero-JS cost.",
+    "key_rules": ["CSS scroll-driven animation", "no JS for native scroll-driven", "GPU-only properties", "progressive enhancement"],
+    "split": "test"
+  },
+  {
+    "id": "combo-05",
+    "category": "combo",
+    "difficulty": "hard",
+    "task": "Write a product showcase section with a large product image area (colored placeholder div), feature highlights using a stagger grid, and a CTA with AIDA copy. Include GSAP scroll-triggered reveal for the image and Framer Motion stagger for the feature grid.",
+    "key_rules": ["GSAP for scroll trigger", "Framer for stagger grid", "never mix GSAP+Framer in same component", "separate components per tool", "AIDA copy"],
+    "split": "test"
+  },
+  {
+    "id": "combo-06",
+    "category": "combo",
+    "difficulty": "hard",
+    "task": "Write a full above-the-fold landing page section for a cloud storage service. Include: sticky navbar, asymmetric hero with headline + subline + CTA on left and abstract shape on right, trust logos bar below. Use proper typography scale, AIDA copy, and Framer Motion entrance animations.",
+    "key_rules": ["sticky top-0 navbar", "asymmetric hero", "AIDA framework", "Framer for entrance", "no Inter font", "no emoji", "no placeholder URLs", "text-4xl md:text-6xl tracking-tighter headline"],
+    "split": "test"
+  }
+]
