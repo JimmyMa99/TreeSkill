@@ -151,7 +151,9 @@ STANDALONE_HTML_TEMPLATE = """<!DOCTYPE html>
     <div id="root"></div>
     <script type="text/babel">
     const {{ useState, useEffect, useRef, useCallback, useMemo }} = React;
-    const {{ motion, AnimatePresence, useMotionValue, useTransform, useInView, useAnimation }} = window["framer-motion"] || {{}};
+    const _FM = window.Motion || window["framer-motion"] || {{}};
+    const {{ motion, AnimatePresence, useMotionValue, useTransform, useInView,
+             useAnimation, useReducedMotion, useScroll, useSpring }} = _FM;
     {code}
 
     // Try to render — find first defined component
