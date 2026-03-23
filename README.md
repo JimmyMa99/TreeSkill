@@ -92,7 +92,7 @@ You: /optimize                            ← 触发 APO 优化
 ✓ Skill optimized → writing-assistant (v1.0 → v1.1) (checkpoint saved)
 ```
 
-每次 `/bad` 和 `/rewrite` 生成一条 Trace（带反馈的交互记录），`/optimize` 时 APO 引擎从这些 Trace 中提取失败模式，计算文本梯度，重写 prompt。**领域专家不需要懂 prompt engineering，只需要判断回答好不好。**
+每次 `/bad` 和 `/rewrite` 仍然只更新当前这条 Trace；同一次会话里所有 Trace 共享同一个 `session_id`，但每条交互都有自己独立的 `trace.id`。`/optimize` 时 APO 引擎从这些 Trace 中提取失败模式，计算文本梯度，重写 prompt。**领域专家不需要懂 prompt engineering，只需要判断回答好不好。**
 
 也支持数据集驱动的模式：
 

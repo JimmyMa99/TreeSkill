@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import base64
 import mimetypes
+import uuid
 from pathlib import Path
 from typing import List, Optional
 
@@ -155,6 +156,7 @@ class ChatCLI:
         self._skill = skill_obj
         self._skill_path = Path(skill_path)
         self._skill_tree = skill_tree
+        self._session_id = str(uuid.uuid4())
 
         self._console = Console(theme=_THEME)
         self._llm = LLMClient(config)
@@ -261,7 +263,11 @@ class ChatCLI:
             self._history.append(response)
 
             # --- trace ---
-            trace = Trace(inputs=list(self._history[:-1]), prediction=response)
+            trace = Trace(
+                session_id=self._session_id,
+                inputs=list(self._history[:-1]),
+                prediction=response,
+            )
             self._storage.append(trace)
             self._last_trace = trace
 

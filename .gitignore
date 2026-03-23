@@ -67,3 +67,4 @@ third_party
 # Optimization outputs
 demo/outputs/
 *.log
+docs/plans

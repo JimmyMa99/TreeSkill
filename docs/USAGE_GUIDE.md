@@ -62,6 +62,8 @@ reward:
 verbose: false
 ```
 
+`trace_path` 指向的 JSONL 文件中，每行都是一条 `Trace`。`trace.id` 仍然标识单条交互记录，`session_id` 用来把同一次运行/会话里的多条 Trace 关联起来；旧文件如果没有 `session_id` 也能正常读取。
+
 使用配置文件：
 
 ```bash

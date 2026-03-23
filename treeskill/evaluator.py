@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import uuid
 from typing import List, Optional
 
 from treeskill.config import GlobalConfig
@@ -49,6 +50,7 @@ class Evaluator:
     def __init__(self, config: GlobalConfig, llm: LLMClient) -> None:
         self._config = config
         self._llm = llm
+        self._session_id: Optional[str] = None
 
     def evaluate(
         self,
@@ -76,6 +78,7 @@ class Evaluator:
         List[Trace]
             One Trace per sample, each with Feedback (score + critique).
         """
+        self._session_id = str(uuid.uuid4())
         samples = list(dataset)
         if max_samples and max_samples < len(samples):
             import random
@@ -102,6 +105,7 @@ class Evaluator:
         for sample, prediction, feedback in zip(samples, predictions, feedbacks):
             compiled = compile_messages(skill, sample.input_messages)
             traces.append(Trace(
+                session_id=self._session_id,
                 inputs=compiled,
                 prediction=prediction,
                 feedback=feedback,
