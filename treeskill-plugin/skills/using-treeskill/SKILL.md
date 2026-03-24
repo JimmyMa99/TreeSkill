@@ -11,8 +11,12 @@ You have access to TreeSkill, a self-evolving skill system. Unlike static skills
 
 1. **You work normally** — complete tasks, write code, answer questions
 2. **After each session** — your conversation is analyzed for quality signals
-3. **Periodically** — APO computes a "text gradient" from failures and rewrites the skill to fix issues
-4. **Next session** — you use the improved skill automatically
+3. **Periodically** — APO+ analyzes failures and grows the skill:
+   - **Prompt fixes** — rewrite instructions to address failures
+   - **Example growth** — add few-shot examples from successful traces
+   - **Script growth** — generate helper scripts for capabilities prompts can't solve
+   - **Sub-skill split** — split into child skills when requirements conflict
+4. **Next session** — you use the improved skill bundle automatically
 
 ## Available Skills
 
