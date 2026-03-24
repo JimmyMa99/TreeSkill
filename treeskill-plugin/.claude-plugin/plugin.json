@@ -1,0 +1,11 @@
+{
+  "name": "treeskill",
+  "description": "Self-evolving skill optimization for Claude Code. Your skills improve automatically through APO (Automatic Prompt Optimization) after every session.",
+  "version": "0.1.0",
+  "author": {
+    "name": "TreeSkill Team"
+  },
+  "repository": "https://github.com/your-org/treeskill-plugin",
+  "license": "MIT",
+  "keywords": ["skills", "optimization", "apo", "self-evolving", "prompt-engineering"]
+}

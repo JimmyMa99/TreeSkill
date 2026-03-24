@@ -1,0 +1,14 @@
+# Evolution data (generated at runtime, may contain sensitive conversation data)
+.evolution/traces.jsonl
+.evolution/scores.jsonl
+.evolution/beam_pool.json
+.evolution/current_skill.md
+.evolution/stats.json
+.evolution/optimization_log.jsonl
+
+# Keep the directory structure
+!.evolution/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
