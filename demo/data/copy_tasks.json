@@ -36,6 +36,18 @@
     "split": "train"
   },
   {
+    "id": "copy-footer",
+    "task": "Write a footer section for a B2B analytics platform. Include 4 link columns (Product, Company, Resources, Legal), a newsletter signup with email input, social media links (text-only, no icons), and a copyright line. Output as HTML with Tailwind CSS.",
+    "key_rules": ["organized link structure", "no emoji", "no Lorem ipsum", "newsletter CTA", "professional tone"],
+    "split": "train"
+  },
+  {
+    "id": "copy-banner-sale",
+    "task": "Write a promotional banner for a Black Friday sale on a developer tools platform. Include headline with discount (40% off), urgency element (ends in 48h), one-line value prop, and a CTA button. Use PAS framework. Output as HTML with Tailwind CSS.",
+    "key_rules": ["PAS framework", "no emoji", "real discount numbers", "urgency without spam", "clean visual hierarchy"],
+    "split": "train"
+  },
+  {
     "id": "copy-faq",
     "task": "Write an FAQ section with 5 questions and answers for a SaaS billing tool. Questions should address common objections (security, pricing, migration, support, cancellation). Output as collapsible accordion HTML with Tailwind CSS.",
     "key_rules": ["objection-handling FAQ", "no emoji", "reassuring tone", "specific answers not generic", "accordion UI"],
@@ -48,6 +60,24 @@
     "split": "val"
   },
   {
+    "id": "copy-comparison",
+    "task": "Write a product comparison section showing your CRM vs 2 competitors. Use a 3-column table with 6 feature rows. Your product should have all checkmarks, competitors mixed. Include a headline and a CTA below the table. Output as HTML with Tailwind CSS.",
+    "key_rules": ["honest comparison", "no emoji", "no Lorem ipsum", "clear visual differentiation", "CTA after table"],
+    "split": "val"
+  },
+  {
+    "id": "copy-social-proof",
+    "task": "Write a social proof / logos section for an API platform. Include a headline ('Trusted by 10,000+ developers'), a row of 6 company name badges (use styled text divs, no images), and a one-line stat ('99.9% uptime, 50ms avg response'). Output as HTML with Tailwind CSS.",
+    "key_rules": ["real metrics", "no emoji", "no Lorem ipsum", "no placeholder images", "credibility-focused"],
+    "split": "val"
+  },
+  {
+    "id": "copy-404",
+    "task": "Write a 404 error page for a productivity app. Include a friendly headline, a short humorous but professional message, a search bar, and two buttons ('Go Home' + 'Contact Support'). Keep it on-brand and helpful. Output as HTML with Tailwind CSS.",
+    "key_rules": ["friendly tone", "no emoji", "helpful navigation", "on-brand humor", "search functionality"],
+    "split": "val"
+  },
+  {
     "id": "copy-hero-ecommerce",
     "task": "Write a hero section for a sustainable fashion brand's online store. Include headline, subheadline emphasizing eco-friendly values, CTA button, and a 'Free shipping over $50' badge. Use AIDA framework. Output as HTML with Tailwind CSS.",
     "key_rules": ["AIDA framework", "no emoji", "brand values in copy", "no Lorem ipsum", "authentic tone"],
@@ -57,6 +87,18 @@
     "id": "copy-about-startup",
     "task": "Write an About section for a fintech startup. Include company mission (one sentence), 3 value propositions with short descriptions, and a team stats bar (50+ employees, 3 offices, $10M raised). Output as HTML with Tailwind CSS.",
     "key_rules": ["concise mission statement", "no emoji", "real numbers", "no Lorem ipsum", "professional tone"],
+    "split": "test"
+  },
+  {
+    "id": "copy-onboarding",
+    "task": "Write an onboarding welcome section for a project management tool's dashboard. Include a welcome headline with user's name placeholder ({name}), 3 getting-started steps with descriptions, a progress indicator (Step 1 of 3), and a 'Skip Tutorial' link. Output as HTML with Tailwind CSS.",
+    "key_rules": ["clear step progression", "no emoji", "actionable copy", "no Lorem ipsum", "encouraging tone"],
+    "split": "test"
+  },
+  {
+    "id": "copy-hero-health",
+    "task": "Write a hero section for a telemedicine platform. Include headline emphasizing convenience, subheadline about board-certified doctors, CTA button ('Book a Visit'), trust badges (HIPAA compliant, 24/7 available, 4.8 rating). Use AIDA framework. Output as HTML with Tailwind CSS.",
+    "key_rules": ["AIDA framework", "no emoji", "trust signals", "no Lorem ipsum", "healthcare-appropriate tone"],
     "split": "test"
   }
 ]

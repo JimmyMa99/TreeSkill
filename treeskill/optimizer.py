@@ -127,6 +127,10 @@ class APOEngine:
         self._config = config
         self._llm = llm
         self._score_fn = score_fn
+        # Exposed after optimize(): final beam as [(prompt, score), ...]
+        self.last_beam: List[tuple] = []
+        # Optional: inject initial beam seeds for cross-round persistence
+        self.initial_beam: Optional[List[str]] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -232,7 +236,12 @@ class APOEngine:
         beam_rounds = apo.beam_rounds
         batch_size = apo.gradient_accumulation_steps
 
-        beam: List[str] = [skill.system_prompt]
+        # Use injected beam seeds if available, otherwise start from current prompt
+        if self.initial_beam:
+            beam: List[str] = list(self.initial_beam)
+            logger.info("Beam initialized from %d injected seeds", len(beam))
+        else:
+            beam: List[str] = [skill.system_prompt]
         history_best_prompt = skill.system_prompt
         history_best_score = -1.0
 
@@ -301,6 +310,22 @@ class APOEngine:
             if top_score > history_best_score:
                 history_best_score = top_score
                 history_best_prompt = ranked[0][0]
+
+        # Store final beam for cross-round persistence
+        # Re-score current beam to get final scores
+        final_scores = self._score_prompts_batch(
+            beam, random.sample(diagnosed, min(batch_size, len(diagnosed))),
+        )
+        self.last_beam = sorted(
+            zip(beam, final_scores), key=lambda x: x[1], reverse=True,
+        )
+        logger.info(
+            "Beam stored: %d candidates, scores=[%s]",
+            len(self.last_beam),
+            ", ".join(f"{s:.2f}" for _, s in self.last_beam),
+        )
+        # Clear injected seeds (one-shot)
+        self.initial_beam = None
 
         # Return best prompt found across all rounds
         if history_best_prompt == skill.system_prompt:

@@ -15,6 +15,7 @@ import os
 import random
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -53,7 +54,10 @@ TEACHER_API_KEY = os.getenv(
 SKILL_PATH = Path("demo/data/minimax_frontend_skill.md")
 DATA_PATH = Path("demo/data/copy_tasks.json")
 OUTPUT_DIR = Path("demo/outputs/distill-copy")
+RESUME_SKILL = Path("demo/outputs/distill-copy/SKILL.md")  # Resume from previous best
 NUM_ROUNDS = 3
+MAX_WORKERS = 4
+VAL_REPEATS = 3  # Run val N times and average to reduce noise
 
 
 # ── Helpers ────────────────────────────────────────────
@@ -184,7 +188,7 @@ def judge_score(
         gold=gold[:3000],
         student=student[:3000],
     )
-    raw = call_model(judge, TEACHER_MODEL, JUDGE_SYSTEM, prompt, max_tokens=1000)
+    raw = call_model(judge, TEACHER_MODEL, JUDGE_SYSTEM, prompt, max_tokens=1000, temperature=0.0)
     try:
         m = re.search(r'(\d+\.?\d*)', raw)
         if m:
@@ -208,6 +212,16 @@ def main():
     skill = load_skill_md(SKILL_PATH)
     logger.info(f"Skill: {len(skill.system_prompt)} chars")
 
+    # Resume from previous best if available
+    if RESUME_SKILL.exists():
+        resume_text = RESUME_SKILL.read_text(encoding="utf-8")
+        if resume_text.strip() and resume_text.strip() != skill.system_prompt.strip():
+            skill = skill.model_copy(update={
+                "system_prompt": resume_text.strip(),
+                "version": "v1.1",  # Continue from v1.1
+            })
+            logger.info(f"Resumed from {RESUME_SKILL} ({len(skill.system_prompt)} chars, {skill.version})")
+
     student_client = anthropic.Anthropic(api_key=STUDENT_API_KEY, base_url=STUDENT_BASE_URL)
     teacher_client = anthropic.Anthropic(api_key=TEACHER_API_KEY, base_url=TEACHER_BASE_URL)
 
@@ -223,23 +237,35 @@ def main():
     else:
         gold = {}
         all_tasks = train + val + test
-        for task in all_tasks:
-            logger.info(f"  Teacher: {task['id']}...")
+
+        def _gen_gold(task):
             code = call_model(teacher_client, TEACHER_MODEL, skill.system_prompt, task["task"])
-            gold[task["id"]] = code
             save_html(code, task["id"], "teacher", OUTPUT_DIR)
+            return task["id"], code
+
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            futures = [pool.submit(_gen_gold, t) for t in all_tasks]
+            for i, f in enumerate(as_completed(futures)):
+                tid, code = f.result()
+                gold[tid] = code
+                logger.info(f"  [{i+1}/{len(all_tasks)}] Teacher: {tid}")
         with open(gold_cache, "w") as f:
             json.dump(gold, f, ensure_ascii=False, indent=2)
 
     # ── Phase 2: Baseline ──
     logger.info("\nPhase 2: Student baseline")
     baseline_scores = []
-    for task in test:
+
+    def _eval_baseline(task):
         code = call_model(student_client, STUDENT_MODEL, skill.system_prompt, task["task"])
         save_html(code, task["id"], "student_baseline", OUTPUT_DIR)
         s = judge_score(teacher_client, task, code, gold[task["id"]])
-        baseline_scores.append(s)
-        logger.info(f"  {task['id']}: {s:.2f}")
+        return task["id"], s
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        for tid, s in pool.map(lambda t: _eval_baseline(t), test):
+            baseline_scores.append(s)
+            logger.info(f"  {tid}: {s:.2f}")
     baseline_avg = sum(baseline_scores) / len(baseline_scores)
     logger.info(f"  Baseline: {baseline_avg:.2f}")
 
@@ -259,8 +285,8 @@ def main():
     config = GlobalConfig(
         llm=LLMConfig(),
         apo=APOConfig(
-            gradient_accumulation_steps=4,
-            beam_width=1,
+            gradient_accumulation_steps=6,
+            beam_width=3,
             branch_factor=2,
             beam_rounds=1,
         ),
@@ -268,35 +294,50 @@ def main():
     llm = LLMClient(config)
     engine = APOEngine(config, llm)
 
-    # Simple score_fn
+    # Concurrent score_fn — parallelize student + judge across traces
     def score_fn(prompt: str, traces: List[Trace]) -> float:
-        scores = []
-        for t in traces:
+        def _score_one(t):
             output = call_model(student_client, STUDENT_MODEL, prompt, t.inputs[-1].content)
             expected = t.feedback.correction if t.feedback and t.feedback.correction else t.prediction.content
             raw = call_model(
                 teacher_client, TEACHER_MODEL,
                 JUDGE_SYSTEM,
                 f"Gold:\n{expected[:2000]}\n\nStudent:\n{output[:2000]}\n\nScore 0.0-1.0:",
-                max_tokens=1000,
+                max_tokens=1000, temperature=0.0,
             )
             try:
                 m = re.search(r'(\d+\.?\d*)', raw)
-                scores.append(max(0.0, min(1.0, float(m.group(1)))) if m else 0.5)
+                return max(0.0, min(1.0, float(m.group(1)))) if m else 0.5
             except:
-                scores.append(0.5)
+                return 0.5
+
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            scores = list(pool.map(_score_one, traces))
         return sum(scores) / len(scores) if scores else 0.0
 
     engine._score_fn = score_fn
     best_skill = skill
     best_val = -1.0
+    # Cross-round beam pool: [(prompt_text, train_score), ...]
+    beam_pool: List[tuple] = []
+
+    def _val_score_prompt(prompt_text: str) -> float:
+        """Evaluate a prompt on the val set, run VAL_REPEATS times and average."""
+        all_scores = []
+        for rep in range(VAL_REPEATS):
+            def _eval_one(task):
+                code = call_model(student_client, STUDENT_MODEL, prompt_text, task["task"])
+                return judge_score(teacher_client, task, code, gold[task["id"]])
+            with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+                scores = list(pool.map(_eval_one, val))
+            all_scores.extend(scores)
+        return sum(all_scores) / len(all_scores) if all_scores else 0.0
 
     for rnd in range(1, NUM_ROUNDS + 1):
         logger.info(f"\n--- Round {rnd}/{NUM_ROUNDS} ---")
 
-        # Collect traces on train
-        traces = []
-        for task in train:
+        # Collect traces using best_skill on train
+        def _collect_trace(task):
             code = call_model(student_client, STUDENT_MODEL, best_skill.system_prompt, task["task"])
             gold_code = gold.get(task["id"], "")
             s = judge_score(teacher_client, task, code, gold_code)
@@ -305,8 +346,13 @@ def main():
                 prediction=Message(role="assistant", content=code),
             )
             t.feedback = Feedback(score=s, critique=f"Score {s:.2f}", correction=gold_code)
-            traces.append(t)
-            logger.info(f"  {task['id']}: {s:.2f}")
+            return task["id"], t, s
+
+        traces = []
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+            for tid, t, s in pool.map(lambda tk: _collect_trace(tk), train):
+                traces.append(t)
+                logger.info(f"  {tid}: {s:.2f}")
 
         failures = [t for t in traces if t.feedback.score < 0.7]
         logger.info(f"  Failures: {len(failures)}/{len(traces)}")
@@ -315,36 +361,73 @@ def main():
             logger.info("  All passing, skip")
             continue
 
+        # Inject beam pool as initial seeds (cross-round persistence)
+        if beam_pool:
+            # Use top beam_width prompts from pool as seeds
+            beam_width = config.apo.beam_width
+            seeds = [p for p, _ in beam_pool[:beam_width]]
+            # Always include current best
+            if best_skill.system_prompt not in seeds:
+                seeds = [best_skill.system_prompt] + seeds[:beam_width - 1]
+            engine.initial_beam = seeds
+            logger.info(f"  Injected {len(seeds)} beam seeds from pool")
+
         t0 = time.time()
         candidate = engine.optimize(best_skill, traces)
         logger.info(f"  Optimize: {time.time()-t0:.1f}s → {candidate.version}")
 
-        # Validate
-        val_scores = []
-        for task in val:
-            code = call_model(student_client, STUDENT_MODEL, candidate.system_prompt, task["task"])
-            s = judge_score(teacher_client, task, code, gold[task["id"]])
-            val_scores.append(s)
-            logger.info(f"  val {task['id']}: {s:.2f}")
-        val_avg = sum(val_scores) / len(val_scores)
+        # Merge engine's beam into pool (deduplicated)
+        existing_prompts = {p for p, _ in beam_pool}
+        for prompt_text, train_score in engine.last_beam:
+            if prompt_text not in existing_prompts:
+                beam_pool.append((prompt_text, train_score))
+                existing_prompts.add(prompt_text)
+        # Sort pool by train score, keep top candidates
+        beam_pool.sort(key=lambda x: x[1], reverse=True)
+        beam_pool = beam_pool[:config.apo.beam_width * 2]  # keep 2x beam_width
+        logger.info(f"  Beam pool: {len(beam_pool)} candidates, top scores=[{', '.join(f'{s:.2f}' for _, s in beam_pool[:5])}]")
 
-        if val_avg > best_val:
-            best_val = val_avg
-            best_skill = candidate
+        # Val-evaluate ALL beam candidates (not just top-1)
+        logger.info("  Val-evaluating beam candidates...")
+        val_results = []
+        for i, (prompt_text, train_score) in enumerate(beam_pool):
+            vs = _val_score_prompt(prompt_text)
+            val_results.append((prompt_text, train_score, vs))
+            logger.info(f"    beam[{i}]: train={train_score:.2f} val={vs:.2f}")
+
+        # Pick best by val score
+        val_results.sort(key=lambda x: x[2], reverse=True)
+        best_prompt, best_train, best_val_score = val_results[0]
+
+        if best_val_score >= best_val:
+            best_val = best_val_score
+            new_version = f"v1.{rnd}"
+            best_skill = skill.model_copy(update={
+                "system_prompt": best_prompt,
+                "version": new_version,
+            })
             save_skill(best_skill, OUTPUT_DIR)
-            logger.info(f"  ★ Accepted {best_skill.version} (val={val_avg:.2f})")
+            logger.info(f"  ★ Accepted {new_version} (train={best_train:.2f} val={best_val_score:.2f})")
         else:
-            logger.info(f"  Rejected (val={val_avg:.2f} <= {best_val:.2f})")
+            logger.info(f"  No improvement (best val={best_val_score:.2f} <= {best_val:.2f})")
+
+        # Re-rank pool by val score for next round's seeds
+        beam_pool = [(p, vs) for p, _, vs in val_results]
 
     # ── Phase 4: Final ──
     logger.info("\nPhase 4: Final test")
-    final_scores = []
-    for task in test:
+
+    def _eval_final(task):
         code = call_model(student_client, STUDENT_MODEL, best_skill.system_prompt, task["task"])
         save_html(code, task["id"], "student_final", OUTPUT_DIR)
         s = judge_score(teacher_client, task, code, gold[task["id"]])
-        final_scores.append(s)
-        logger.info(f"  {task['id']}: {s:.2f}")
+        return task["id"], s
+
+    final_scores = []
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        for tid, s in pool.map(lambda t: _eval_final(t), test):
+            final_scores.append(s)
+            logger.info(f"  {tid}: {s:.2f}")
     final_avg = sum(final_scores) / len(final_scores)
 
     elapsed = time.time() - t_start
