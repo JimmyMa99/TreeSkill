@@ -173,4 +173,4 @@ TreeSkill follows the standard Claude Code plugin format. The same skill bundle 
 
 ## License
 
-MIT
+Apache 2.0 (same as the main TreeSkill project)

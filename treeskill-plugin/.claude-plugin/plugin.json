@@ -6,6 +6,6 @@
     "name": "TreeSkill Team"
   },
   "repository": "https://github.com/your-org/treeskill-plugin",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": ["skills", "optimization", "apo", "self-evolving", "prompt-engineering"]
 }
