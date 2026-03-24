@@ -19,6 +19,7 @@ You have access to TreeSkill, a self-evolving skill system. Unlike static skills
 | Skill | When to Use |
 |-------|-------------|
 | `treeskill:optimize` | User says "/optimize" or you detect repeated failures in your current skill |
+| `treeskill:optimize-advanced` | User says "/optimize-advanced" — runs Python APO engine with beam search (requires `pip install treeskill`) |
 | `treeskill:evolve-status` | User asks about evolution progress, skill version, or optimization history |
 | `treeskill:review-session` | End of a session — reflect on what went well/poorly to generate learning signal |
 
