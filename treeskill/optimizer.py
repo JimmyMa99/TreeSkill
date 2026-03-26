@@ -23,7 +23,9 @@ from __future__ import annotations
 import json
 import logging
 import random
+import re
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 from rich.progress import (
@@ -131,6 +133,99 @@ class APOEngine:
         self.last_beam: List[tuple] = []
         # Optional: inject initial beam seeds for cross-round persistence
         self.initial_beam: Optional[List[str]] = None
+        # After optimize(): structured actions from skill-builder rewriter
+        self.pending_actions: List[Dict] = []
+
+    # ------------------------------------------------------------------
+    # Structured output parsing (skill-builder rewriter)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def parse_rewriter_output(raw: str) -> Dict:
+        """Parse rewriter output that may contain structured actions.
+
+        Returns a dict with:
+            - "prompt": the new system prompt text
+            - "tools": list of tool specs (if ```tool blocks found)
+            - "split": list of child specs (if ```split block found)
+            - "action": "prompt_only" | "add_tool" | "split"
+        """
+        result: Dict = {"prompt": raw, "tools": [], "split": [], "action": "prompt_only"}
+
+        # Extract ```tool blocks
+        tool_blocks = re.findall(r'```tool\n(.*?)```', raw, re.DOTALL)
+        if tool_blocks:
+            result["action"] = "add_tool"
+            for block in tool_blocks:
+                tool_spec: Dict = {}
+                for line in block.strip().splitlines():
+                    if ":" in line and not line.strip().startswith("#"):
+                        key, val = line.split(":", 1)
+                        key = key.strip()
+                        if key in ("name", "description", "type"):
+                            tool_spec[key] = val.strip()
+                # Extract script code (everything after "script: |")
+                script_match = re.search(r'script:\s*\|\n(.*?)$', block, re.DOTALL)
+                if script_match:
+                    tool_spec["code"] = script_match.group(1).strip()
+                if tool_spec.get("name"):
+                    result["tools"].append(tool_spec)
+
+            # Remove tool blocks from prompt
+            clean = re.sub(r'```tool\n.*?```', '', raw, flags=re.DOTALL).strip()
+            result["prompt"] = clean
+
+        # Extract ```split block
+        split_match = re.search(r'```split\n(.*?)```', raw, re.DOTALL)
+        if split_match:
+            result["action"] = "split"
+            try:
+                specs = json.loads("[" + split_match.group(1).strip().lstrip("-") + "]")
+                result["split"] = specs
+            except json.JSONDecodeError:
+                # Try YAML-like parsing
+                for line in split_match.group(1).strip().splitlines():
+                    line = line.strip().lstrip("- ")
+                    if line.startswith("name:"):
+                        result["split"].append({"name": line.split(":", 1)[1].strip()})
+                    elif line.startswith("description:") and result["split"]:
+                        result["split"][-1]["description"] = line.split(":", 1)[1].strip()
+                    elif line.startswith("tools:") and result["split"]:
+                        tools_str = line.split(":", 1)[1].strip()
+                        result["split"][-1]["tools"] = json.loads(tools_str) if tools_str.startswith("[") else [tools_str]
+
+            clean = re.sub(r'```split\n.*?```', '', raw, flags=re.DOTALL).strip()
+            result["prompt"] = clean
+
+        return result
+
+    def apply_structured_actions(
+        self, skill: Skill, actions: Dict, skill_dir: Optional[Path] = None,
+    ) -> None:
+        """Apply structured actions from skill-builder rewriter.
+
+        Writes script.py for tool actions. Split actions are stored
+        in self.pending_actions for the caller to handle.
+        """
+        if actions["action"] == "add_tool" and actions["tools"]:
+            for tool_spec in actions["tools"]:
+                code = tool_spec.get("code", "")
+                name = tool_spec.get("name", "tool")
+                if code and skill_dir:
+                    script_path = skill_dir / "script.py"
+                    # Append to existing script.py or create new
+                    existing = script_path.read_text() if script_path.exists() else ""
+                    if name not in existing:
+                        with open(script_path, "a") as f:
+                            f.write(f"\n\n# Auto-generated tool: {name}\n{code}\n")
+                        logger.info("Generated tool '%s' in %s", name, script_path)
+
+        if actions["action"] == "split" and actions["split"]:
+            self.pending_actions.append(actions)
+            logger.info(
+                "Split recommended: %s",
+                [s.get("name") for s in actions["split"]],
+            )
 
     # ------------------------------------------------------------------
     # Public API
@@ -185,14 +280,26 @@ class APOEngine:
         responses = self._llm.generate_batch(
             edit_batches, role="rewrite",
         )
-        candidates = [
+        raw_candidates = [
             r.content if isinstance(r.content, str) else str(r.content)
             for r in responses if r.content
         ]
-        logger.info("Generated %d candidates (requested %d)", len(candidates), num_candidates)
-        if not candidates:
+        logger.info("Generated %d candidates (requested %d)", len(raw_candidates), num_candidates)
+        if not raw_candidates:
             logger.warning("All candidate generations failed — keeping original.")
             return skill
+
+        # Parse structured output from each candidate
+        parsed = [self.parse_rewriter_output(c) for c in raw_candidates]
+        candidates = [p["prompt"] for p in parsed]
+
+        # Log any structured actions detected
+        for i, p in enumerate(parsed):
+            if p["action"] != "prompt_only":
+                logger.info(
+                    "Candidate %d has structured action: %s (tools=%d, split=%d)",
+                    i + 1, p["action"], len(p["tools"]), len(p["split"]),
+                )
 
         # Score all (original + candidates)
         all_prompts = [skill.system_prompt] + candidates
@@ -206,6 +313,12 @@ class APOEngine:
         if best_idx == 0:
             logger.info("No candidate improved over current — keeping original.")
             return skill
+
+        # Apply structured actions from the winning candidate
+        if best_idx > 0:
+            winner_parsed = parsed[best_idx - 1]
+            if winner_parsed["action"] != "prompt_only":
+                self.apply_structured_actions(skill, winner_parsed)
 
         new_version = _increment_version(skill.version)
         logger.info("Accepted candidate %d (score=%.2f) → %s", best_idx, scores[best_idx], new_version)
@@ -268,10 +381,17 @@ class APOEngine:
                 responses = self._llm.generate_batch(
                     edit_batches, role="rewrite",
                 )
-                new_prompts = [
+                raw_outputs = [
                     r.content if isinstance(r.content, str) else str(r.content)
                     for r in responses if r.content
                 ]
+                # Parse structured output
+                parsed = [self.parse_rewriter_output(o) for o in raw_outputs]
+                new_prompts = [p["prompt"] for p in parsed]
+                # Store structured actions
+                for p in parsed:
+                    if p["action"] != "prompt_only":
+                        self.pending_actions.append(p)
                 logger.info(
                     "  Parent %d/%d → %d candidates",
                     pidx + 1, len(parents), len(new_prompts),
@@ -326,6 +446,13 @@ class APOEngine:
         )
         # Clear injected seeds (one-shot)
         self.initial_beam = None
+
+        # Apply any pending structured actions from the best candidate
+        if self.pending_actions:
+            logger.info(
+                "Beam search produced %d structured actions",
+                len(self.pending_actions),
+            )
 
         # Return best prompt found across all rounds
         if history_best_prompt == skill.system_prompt:
