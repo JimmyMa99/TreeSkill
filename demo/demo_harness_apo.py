@@ -43,20 +43,13 @@ logger = logging.getLogger(__name__)
 # ── Config ─────────────────────────────────────────────
 ACTOR_MODEL = "intern-s1-pro"
 ACTOR_BASE_URL = "https://chat.intern-ai.org.cn"
-ACTOR_API_KEY = os.getenv(
-    "INTERN_API_KEY",
-    "REDACTED_INTERN_API_KEY",
-)
+ACTOR_API_KEY = os.getenv("INTERN_API_KEY")
+assert ACTOR_API_KEY, "Set INTERN_API_KEY env var"
 
-JUDGE_BASE_URL = os.getenv(
-    "TREE_LLM_BASE_URL",
-    "https://oneapi.liuyanxing.site:8443/v1",
-)
+JUDGE_BASE_URL = os.getenv("TREE_LLM_BASE_URL", "https://oneapi.liuyanxing.site:8443/v1")
 JUDGE_MODEL = os.getenv("TREE_LLM_JUDGE_MODEL", "bailian/glm-5")
-JUDGE_API_KEY = os.getenv(
-    "TREE_LLM_API_KEY",
-    "REDACTED_ONEAPI_KEY",
-)
+JUDGE_API_KEY = os.getenv("TREE_LLM_API_KEY")
+assert JUDGE_API_KEY, "Set TREE_LLM_API_KEY env var"
 
 OUTPUT_DIR = Path("demo/outputs/harness-apo")
 NUM_ROUNDS = 2
