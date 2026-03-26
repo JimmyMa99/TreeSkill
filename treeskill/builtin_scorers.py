@@ -3,7 +3,11 @@
 Auto-imported by the registry to provide default components.
 """
 
+import logging
+
 from treeskill.registry import scorer, gradient, rewriter
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -101,4 +105,113 @@ def _rewriter_distill():
         "EXPAND key rules with explicit examples and explanations. "
         "Keep all tool/script references intact. "
         "Return ONLY the new prompt — no commentary, no markdown code fences."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Harness Scorer — run skill in real agent loop
+# ---------------------------------------------------------------------------
+
+@scorer("harness")
+def harness_scorer(output: str, expected: str, context: dict) -> float:
+    """Score by running a skill in AgentHarness and evaluating the result.
+
+    Required context keys:
+        harness: AgentHarness instance
+        task: str — the task to run
+        judge_fn: callable(agent_output, expected) -> float (optional)
+        verify_fn: callable(HarnessResult) -> float (optional, e.g. run tests)
+
+    Evaluation priority:
+        1. verify_fn (if provided) — hard verification (tests pass, file exists, etc.)
+        2. judge_fn (if provided) — LLM judge compares output
+        3. success check — did the agent complete without error?
+    """
+    from treeskill.harness import AgentHarness, HarnessResult
+
+    harness = context.get("harness")
+    task = context.get("task", "")
+    skill_prompt = context.get("skill_prompt", "")
+
+    if not harness or not task:
+        logger.warning("harness scorer: missing harness or task in context")
+        return 0.0
+
+    # Run the agent
+    result: HarnessResult = harness.run(task, system_prompt=skill_prompt)
+
+    if not result.success:
+        return 0.0
+
+    # Priority 1: hard verification (e.g. run tests, check files)
+    verify_fn = context.get("verify_fn")
+    if verify_fn is not None:
+        return verify_fn(result)
+
+    # Priority 2: judge compares agent output vs expected
+    judge_fn = context.get("judge_fn")
+    if judge_fn is not None:
+        return judge_fn(result.output, expected)
+
+    # Priority 3: basic success — agent completed and produced output
+    return 1.0 if result.output.strip() else 0.5
+
+
+# ---------------------------------------------------------------------------
+# Tool-Aware Gradient
+# ---------------------------------------------------------------------------
+
+@gradient("tool-aware")
+def _gradient_tool_aware():
+    return (
+        "You are a skill architect. Analyze the failures below and determine "
+        "the root cause for each:\n\n"
+        "1. **PROMPT problem** — instructions are unclear, ambiguous, or missing\n"
+        "2. **TOOL problem** — the agent lacks a capability it needs:\n"
+        "   - Web search (needs current/external information)\n"
+        "   - Code execution (needs to compute or verify)\n"
+        "   - File access (needs to read/write specific files)\n"
+        "   - API calls (needs external service integration)\n"
+        "3. **KNOWLEDGE problem** — the model simply doesn't know the answer\n\n"
+        "For each failure, classify which type it is and explain why.\n"
+        "For TOOL problems, specify exactly what tool is needed.\n"
+        "Return a structured analysis with clear categories."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Skill-Builder Rewriter
+# ---------------------------------------------------------------------------
+
+@rewriter("skill-builder")
+def _rewriter_skill_builder():
+    return (
+        "You are a skill architect. Based on the failure analysis below, "
+        "improve the skill. You have three options:\n\n"
+        "**Option A: PROMPT FIX** — If the issue is unclear instructions, "
+        "rewrite the system prompt. Return ONLY the new prompt text.\n\n"
+        "**Option B: ADD TOOL** — If the skill needs a new tool capability, "
+        "output the improved prompt AND a tool specification block:\n"
+        "```tool\n"
+        "name: web_search\n"
+        "description: Search the web for current information\n"
+        "script: |\n"
+        "  import requests\n"
+        "  def web_search(query: str) -> str:\n"
+        "      # implementation\n"
+        "      pass\n"
+        "```\n\n"
+        "**Option C: SPLIT** — If different failure types need different "
+        "strategies, recommend splitting into sub-skills:\n"
+        "```split\n"
+        "- name: factual-qa\n"
+        "  description: Answer factual questions using web search\n"
+        "  tools: [web_search]\n"
+        "- name: reasoning-qa\n"
+        "  description: Answer reasoning questions with step-by-step logic\n"
+        "  tools: [code_execution]\n"
+        "```\n\n"
+        "Choose the option that best addresses the root causes. "
+        "If Option A, return ONLY the prompt. "
+        "If Option B or C, include the code block markers."
     )
