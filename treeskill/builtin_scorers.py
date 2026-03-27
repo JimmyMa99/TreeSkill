@@ -109,6 +109,84 @@ def _rewriter_distill():
 
 
 # ---------------------------------------------------------------------------
+# Kode CLI Scorer — run skill via Kode agent CLI
+# ---------------------------------------------------------------------------
+
+@scorer("kode-cli")
+def kode_cli_scorer(output: str, expected: str, context: dict) -> float:
+    """Score by running a task through Kode CLI with a skill loaded.
+
+    Required context keys:
+        task: str — the task to run
+        skill_dir: Path — directory containing SKILL.md (optional)
+        skill_prompt: str — system prompt to write as AGENTS.md (optional)
+        verify_fn: callable(kode_result: dict, workdir: Path) -> float (optional)
+        judge_fn: callable(output: str, expected: str) -> float (optional)
+    """
+    import json as _json
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    task = context.get("task", "")
+    if not task:
+        logger.warning("kode-cli scorer: missing task")
+        return 0.0
+
+    # Prepare workspace
+    workdir = context.get("workdir")
+    if not workdir:
+        workdir = Path(tempfile.mkdtemp(prefix="kode_score_"))
+    workdir = Path(workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    # Write skill as AGENTS.md
+    skill_prompt = context.get("skill_prompt", "")
+    skill_dir = context.get("skill_dir")
+    if skill_prompt:
+        (workdir / "AGENTS.md").write_text(skill_prompt, encoding="utf-8")
+    elif skill_dir:
+        skill_md = Path(skill_dir) / "SKILL.md"
+        if skill_md.exists():
+            (workdir / "AGENTS.md").write_text(
+                skill_md.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+
+    # Run Kode CLI
+    try:
+        proc = subprocess.run(
+            ["kode", "-p", task, "--cwd", str(workdir),
+             "--output-format", "json", "--dangerously-skip-permissions"],
+            capture_output=True, text=True, timeout=180,
+        )
+        result = _json.loads(proc.stdout) if proc.stdout.strip() else {}
+    except subprocess.TimeoutExpired:
+        logger.warning("kode-cli scorer: timeout")
+        return 0.0
+    except Exception as e:
+        logger.warning(f"kode-cli scorer: {e}")
+        return 0.0
+
+    if result.get("is_error"):
+        return 0.0
+
+    kode_output = result.get("result", "")
+
+    # Priority 1: verify_fn (hard check)
+    verify_fn = context.get("verify_fn")
+    if verify_fn is not None:
+        return verify_fn(result, workdir)
+
+    # Priority 2: judge_fn
+    judge_fn = context.get("judge_fn")
+    if judge_fn is not None:
+        return judge_fn(kode_output, expected)
+
+    # Priority 3: basic success
+    return 1.0 if kode_output.strip() else 0.5
+
+
+# ---------------------------------------------------------------------------
 # Harness Scorer — run skill in real agent loop
 # ---------------------------------------------------------------------------
 
