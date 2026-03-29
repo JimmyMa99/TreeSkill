@@ -68,3 +68,9 @@ third_party
 demo/outputs/
 *.log
 docs/plansClaude_work.md
+
+# Local tool cache and runtime settings
+.kode/
+
+# Session notes containing sensitive keys
+Claude_work.md

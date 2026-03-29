@@ -4,12 +4,22 @@
 
 [English](./docs_en/README.md) | 中文
 
-**Train-Free Agent Prompt 自进化框架**
+**Kode 前向 + AS(skill)O 自进化框架**
 
-把 System Prompt 当作"权重"，把交互反馈当作"训练信号"，通过文本梯度下降（TGD）让 prompt 自动进化——免训练，免标注，只靠 API 调用。
+当前主流 pipeline 已经收敛为：
+
+```text
+Kode 前向执行 → 失败样本 / 反馈 → ASO 生成/修改 skill program → 评估 → 剪枝 / 合并
+```
+
+也就是说，优化对象不再只是单个 prompt，而是完整的：
+
+```text
+program = root prompt + skills + selection policy
+```
 
 ```
-用户反馈 → 诊断失败 → 计算文本梯度 → Beam Search 重写 → 更好的 Agent
+问题 / 数据集 → Kode 执行 → 文本梯度 / proposal → skill growth → prune / merge → 更好的 Agent
 ```
 
 ## 核心理念
@@ -51,6 +61,47 @@ cd TreeSkill
 pip install -e .
 ```
 
+## 当前主流 Pipeline
+
+推荐直接跑 SealQA 生命周期 demo。它使用：
+- `Kode` 作为前向执行器
+- `ASO` 作为 program / skill 修改器
+- 一个免费、稳定的本地 `search_web/fetch_url` 抽象来模拟检索
+
+```bash
+# 默认就是当前主流 pipeline
+python -m treeskill
+
+# 等价写法
+python -m treeskill sealqa-lifecycle
+```
+
+输出会落到：
+
+```text
+demo/outputs/sealqa-tree-lifecycle/
+├── root/
+├── generated/
+├── evolved/
+├── pruned/
+├── merged/
+└── summary.json
+```
+
+如果你要跑更接近真实 ASO frontier 的最小实验：
+
+```bash
+python -m treeskill sealqa-aso
+```
+
+旧的交互式 APO/chat 入口仍保留为兼容模式：
+
+```bash
+python -m treeskill legacy-chat -- --skill demo/writing-skills
+# 或
+python -m treeskill.main --skill demo/writing-skills
+```
+
 ## 快速开始
 
 ### 1. 配置 API
@@ -68,7 +119,13 @@ TREE_LLM_BASE_URL=https://api.siliconflow.cn/v1
 TREE_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
-### 2. 启动
+### 2. 启动当前主流 demo
+
+```bash
+python -m treeskill
+```
+
+### 3. 启动旧版兼容 chat / APO
 
 ```bash
 # 用已有 skill 目录
@@ -81,7 +138,7 @@ python -m treeskill.main --skill default
 python -m treeskill.main --skill my-skills/
 ```
 
-### 3. Human-in-the-Loop 优化
+### 4. Human-in-the-Loop 优化（兼容模式）
 
 TreeSkill 的核心交互模式是**人机协作优化**：领域专家通过自然语言反馈，引导 APO 引擎改进 prompt。
 
@@ -222,7 +279,26 @@ writing-skills/
 | `/tools` | 查看可用工具 |
 | `/quit` | 退出 |
 
-## APO 优化原理
+## AS(skill)O 主线
+
+当前推荐的优化对象是 skill program，而不是单个 prompt：
+
+| 层级 | 当前主线 |
+|------|----------|
+| 前向执行 | `Kode` |
+| 优化对象 | `root prompt + skills + selection policy` |
+| 修改动作 | `add_skill / revise_skill / drop_skill / merge_skills / adjust_selection_policy` |
+| 生命周期 | `root -> generate -> evolve -> prune -> merge` |
+| 推荐 demo | `python -m treeskill` |
+
+其中，SealQA lifecycle demo 会显式展示：
+- 从弱 root 起步
+- 自动长出检索 / 校验 / 时效性 skill
+- 自进化强化 skill 用法
+- 剪枝低收益 skill
+- 合并 / 重整 skill 集合
+
+## APO 优化原理（兼容层）
 
 APO（Automatic Prompt Optimization）引擎对齐 [Agent-Lightning](https://github.com/microsoft/agent-lightning/) 的设计，核心是 **Beam Search + 文本梯度下降**：
 
@@ -277,6 +353,7 @@ python -m treeskill.main --ckpt ckpt/writing-assistant_v1.2_20260306_140000
 
 ```
 treeskill/
+├── pipeline_main.py       # 当前主入口：Kode + ASO pipeline
 ├── core/                   # 核心抽象层
 │   ├── abc.py             # 抽象基类
 │   ├── optimizer.py       # TrainFreeOptimizer (TGD)
@@ -289,13 +366,15 @@ treeskill/
 ├── schema.py              # 数据模型 (Skill, Message, Trace, ToolRef)
 ├── skill.py               # SKILL.md 解析器/写入器
 ├── skill_tree.py          # 层级 Skill 树管理 (graft/split/merge/prune)
-├── optimizer.py           # APOEngine (Beam Search + 单轨)
+├── aso_program.py         # Skill program 数据结构
+├── aso_optimizer.py       # AS(skill)O 主循环
+├── optimizer.py           # APOEngine（兼容层，旧 pipeline）
 ├── tools.py               # 工具系统 (HTTP, MCP, script.py)
 ├── resume.py              # 断点续跑状态管理
 ├── checkpoint.py          # Checkpoint 快照
-├── cli.py                 # 交互式 CLI (Human-in-the-Loop)
+├── cli.py                 # 交互式 CLI (兼容层)
 ├── registry.py            # 插件系统 (@adapter, @optimizer)
-└── main.py                # 入口
+└── main.py                # 旧 chat / APO 入口
 ```
 
 ## 配置参考
@@ -328,15 +407,16 @@ treeskill/
 | [架构设计](./docs/ARCHITECTURE.md) | 核心架构和设计理念 |
 | [核心抽象](./docs/CORE_ABSTRACTION.md) | Prompt、Gradient、Experience 接口 |
 | [工具系统](./docs/TOOLS_GUIDE.md) | Python、HTTP、MCP 工具注册 |
+| [Kode + MiniMax Thinking 验证](./docs/KODE_MINIMAX_THINKING.md) | 原版 Kode 与 MiniMax thinking 模式兼容结论 |
 | [OpenAI 适配器](./docs/OPENAI_ADAPTER.md) | GPT-4o、o1 等 |
 | [Anthropic 适配器](./docs/ANTHROPIC_ADAPTER.md) | Claude 4.5/4.6 系列 |
 | [跨模型 Skill 迁移](./docs/design/cross-model-transfer.md) | 双模型 TGD：大模型优化，小模型执行 |
 | [优化器详解](./docs/OPTIMIZER_COMPLETE.md) | TrainFreeOptimizer 技术文档 |
-| [树优化 Demo](./docs/TREE_OPTIMIZATION_DEMO.md) | 10 分钟最小化树优化最佳实践（论文分类） |
+| [实验记录](./docs/EXPERIMENTS.md) | 当前主线实验与历史实验 |
 
 ## Kode 集成
 
-TreeSkill 支持使用 [Kode](https://github.com/shareAI-lab/Kode-Agent) 作为 Agent 前向引擎。Skill 在 Kode 的真实 agent loop 中执行（工具调用、文件操作、代码运行），APO 根据执行结果优化 Skill。
+TreeSkill 当前推荐使用 [Kode](https://github.com/shareAI-lab/Kode-Agent) 作为 Agent 前向引擎。Skill/program 在 Kode 的真实 agent loop 中执行（工具调用、文件操作、代码运行），ASO 根据执行结果修改 skill program。
 
 ### 安装 Kode
 
@@ -379,24 +459,26 @@ npm install -g @shareai-lab/kode
 kode -p "Say hello" --output-format json --dangerously-skip-permissions
 ```
 
-### 运行 Demo
+### 运行当前主流 Demo
 
 ```bash
-# Kode + APO 端到端
-export TREE_LLM_API_KEY=your-judge-api-key
-python demo/demo_kode_apo.py
+# 默认：SealQA lifecycle
+python -m treeskill
+
+# 更接近真实 frontier 的 ASO 最小实验
+python -m treeskill sealqa-aso
 ```
 
 ### 架构
 
 ```
-TreeSkill APO 循环
-    ↓ 写入/更新 SKILL.md
+TreeSkill ASO 循环
+    ↓ 写入/更新 AGENTS.md / skills/
 Kode CLI (前向引擎)
-    ↓ 加载 Skill → agent loop → 工具调用
+    ↓ 加载 program / Skill → agent loop → 工具调用
     ↓ 返回 JSON 结果
-TreeSkill 评估 (verify_fn / judge_fn)
-    ↓ 计算梯度 → 重写 Skill
+TreeSkill 评估 (verify_fn / judge_fn / cached search)
+    ↓ 计算梯度 → 生成/修改/剪枝/合并 Skill
     ↓ 回到顶部
 ```
 
@@ -406,8 +488,8 @@ TreeSkill 评估 (verify_fn / judge_fn)
 |------|------|------|------|
 | 论文分类 3 类 | Qwen3.5-4B + GLM-5 | 50% → 91.7% (+41.7%) | [详细报告](./docs/DEMO_PAPER_CLASSIFICATION.md) |
 | 论文分类 6 类 (split) | Qwen3.5-4B + GLM-5 | 10% → 86.7% (+76.7%) | auto-split 为 physics/cs/math |
-| Kode APO | qwen3.5-plus | 端到端 4.2 分钟 | Kode CLI 前向引擎验证 |
-| SealQA | Qwen3.5-9B + GLM-5 | 3.5% → 2.4% (无提升) | 知识型任务不适合纯 prompt 优化 |
+| SealQA lifecycle (cached search) | MiniMax-M2.7 | 16.7% → 100% | `root -> generate -> evolve -> prune -> merge` 全链路演示 |
+| SealQA ASO mini | MiniMax-M2.7 | 0% → 0% | 证明 skill 可增长，但无检索时不会自动补知识 |
 
 ## 致谢
 

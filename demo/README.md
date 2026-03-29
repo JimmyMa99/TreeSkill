@@ -1,54 +1,52 @@
-# Evo-Framework Demo
+# Demo Guide
 
-## 准备
+当前推荐只看两条主线：
 
-```bash
-cd /Users/mzm/code/evo_agent
-conda activate pr
-```
+| Demo | 用途 | 命令 |
+|---|---|---|
+| `demo_sealqa_tree_lifecycle.py` | 完整生命周期：`root -> generate -> evolve -> prune -> merge` | `python -m treeskill` |
+| `demo_sealqa_aso.py` | 更接近真实 frontier/beam 的最小 ASO 实验 | `python -m treeskill sealqa-aso` |
 
-项目根目录的 `.env` 已配置好 SiliconFlow API。
+## 推荐顺序
 
-## Demo 1: 从零开始构建
+### 1. 生命周期 Demo
 
-从一句「你是一个写作助手」出发，通过反馈和 APO 自动进化出详细的 prompt：
-
-```bash
-python demo/demo_from_scratch.py
-```
-
-**流程**: 创建极简 Skill → 生成内容 → 用户反馈（/bad + /rewrite） → 设置 /target 优化方向 → APO 优化 → 对比进化效果
-
-## Demo 2: 从已有 Skill 开始优化
-
-加载预设的写作助手 skill，批量测试多种写作任务，收集反馈后优化：
+这是当前仓库的主流 pipeline：
+- `Kode` 做前向执行
+- `ASO` 做 skill/program 修改
+- 使用本地 `search_web/fetch_url` 抽象稳定复现 SealQA 小样本
+- 检索策略默认：`search_web_lookup` 只查本地缓存；可通过设置 `SEALQA_ASO_ENABLE_WEB_FALLBACK=1` 打开外部回退，并通过 `SEALQA_WEB_SEARCH_CMD`、`SEALQA_WEB_FETCH_CMD` 注入外部工具命令。
 
 ```bash
-python demo/demo_from_skill.py
+python -m treeskill
 ```
 
-**流程**: 加载 writing-skills.yaml → 多任务生成 → 批量反馈 → 设置 target → APO 优化 → A/B 对比
+输出目录：
 
-## 交互式聊天
+```text
+demo/outputs/sealqa-tree-lifecycle/
+```
 
-直接进入 CLI 聊天和实时优化：
+### 2. 最小 ASO Demo
+
+如果你要看 frontier / candidate growth：
 
 ```bash
-python -m treeskill.main --skill demo/writing-skills
+python -m treeskill sealqa-aso
 ```
 
-主要命令：`/bad`、`/rewrite`、`/export-dpo`、`/target`、`/optimize`、`/image`、`/save`、`/quit`
+输出目录：
 
-## 数据集标注
-
-人机协作标注模式（auto-judge + 人工 override）：
-
-```bash
-# 自动模式（默认）：LM judge 打分，人可随时 override
-python -m treeskill.main --annotate --dataset demo/data/paper_cls_26class.jsonl --skill demo/outputs/paper-cls-26
-
-# 手动模式：每条等人反馈
-python -m treeskill.main --annotate --dataset demo/data/paper_cls_26class.jsonl --skill demo/outputs/paper-cls-26 --manual
+```text
+demo/outputs/sealqa-aso-mini/
 ```
 
-标注中可用 `/auto`、`/manual` 实时切换模式。
+## 归档 Demo
+
+旧的 prompt-only / `APOEngine` / 早期 tree 实验，已经迁到：
+
+```text
+demo/archive/
+```
+
+它们保留作历史参考，不再代表当前主流 pipeline。

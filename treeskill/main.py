@@ -1,10 +1,12 @@
-"""Evo-Framework — Entry Point.
+"""Legacy TreeSkill chat / APO entry point.
 
 Usage::
 
     python -m treeskill.main --skill <name-or-path>
     python -m treeskill.main --skill <name-or-path> --optimize
     python -m treeskill.main --ckpt <checkpoint-path>
+
+For the current recommended pipeline, use ``python -m treeskill`` instead.
 """
 
 from __future__ import annotations
@@ -110,7 +112,7 @@ def _handle_resume(skill_path: Path, *, force_restart: bool = False) -> ResumeSt
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="evo",
-        description="Evo-Framework: Multimodal Self-Evolving Agent",
+        description="TreeSkill legacy chat / APO entrypoint. Use `python -m treeskill` for the primary pipeline.",
     )
     parser.add_argument(
         "--skill",
@@ -166,6 +168,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Enable debug logging.",
     )
     args = parser.parse_args(argv)
+
+    console.print(
+        "[yellow]Using legacy compatibility entrypoint.[/yellow] "
+        "Primary pipeline: [cyan]python -m treeskill[/cyan]"
+    )
 
     # --- Config ---
     if args.config:

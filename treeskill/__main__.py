@@ -1,5 +1,5 @@
-"""Allow ``python -m treeskill`` to launch the CLI."""
+"""Allow ``python -m treeskill`` to launch the primary pipeline entrypoint."""
 
-from treeskill.main import main
+from treeskill.pipeline_main import main
 
-main()
+raise SystemExit(main())

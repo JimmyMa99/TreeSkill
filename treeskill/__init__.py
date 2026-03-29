@@ -1,13 +1,15 @@
 """
-treeskill: Train-free Prompt Evolution Framework
+treeskill: Kode-forwarded AS(skill)O framework
 
-A plugin-based framework for evolving LLM prompts and skills
-using Textual Gradient Descent (TGD).
+Primary pipeline:
+- Kode performs the forward pass
+- ASO evolves full programs (root prompt + skills + selection policy)
+- SealQA lifecycle demo is the current recommended end-to-end example
 
 Core Components:
 - Core Abstraction Layer: Model-agnostic interfaces
 - Model Adapters: OpenAI, Anthropic, and more
-- Optimizer: TGD-based prompt optimization
+- Optimizer: TGD-based prompt and skill optimization
 - Registry: Plugin system for extensibility
 - Legacy: Backward compatible with v0.1
 """
@@ -172,6 +174,9 @@ from treeskill.config import GlobalConfig
 from treeskill.skill_tree import SkillTree, SkillNode, resolve_skill_tools
 from treeskill.checkpoint import CheckpointManager
 from treeskill.resume import ResumeState
+from treeskill.aso_program import ASOProgram, ASOSkill
+from treeskill.aso_optimizer import ASOOptimizer, ASOSkillAction, ASOResult, ASOIterationResult
+from treeskill.tasks import SealQAExample, SealQATaskAdapter
 
 # Skill management functions (Agent Skills format)
 from treeskill.skill import (

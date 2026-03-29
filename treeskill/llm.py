@@ -184,6 +184,8 @@ class LLMClient:
         }
         if system_text:
             kwargs["system"] = system_text
+        if extra_body:
+            kwargs.update(extra_body)
 
         resp = self._call_with_retry(client.messages.create, **kwargs)
 
@@ -217,6 +219,8 @@ class LLMClient:
         }
         if system_text:
             kwargs["system"] = system_text
+        if extra_body:
+            kwargs.update(extra_body)
 
         resp = await self._acall_with_retry(client.messages.create, **kwargs)
 

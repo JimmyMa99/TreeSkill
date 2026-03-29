@@ -1,4 +1,4 @@
-"""CLI Interface — Rich-based terminal chat with multimodal & feedback support.
+"""Legacy CLI Interface — Rich-based terminal chat with multimodal & feedback support.
 
 Commands
 --------
@@ -133,7 +133,7 @@ def _build_chat_prompt_session() -> PromptSession[str]:
 
 
 class ChatCLI:
-    """Interactive terminal chat powered by Evo-Framework.
+    """Interactive terminal chat powered by the legacy APO workflow.
 
     Parameters
     ----------
@@ -187,6 +187,9 @@ class ChatCLI:
 
         self._console.print(
             Panel(
+                "[bold yellow]Legacy compatibility mode[/bold yellow]\n"
+                "The current primary pipeline is `python -m treeskill` "
+                "(Kode forward + ASO skill evolution).\n\n"
                 f"[bold]TreeSkill Chat[/bold]\n"
                 f"Skill: [cyan]{self._skill.name}[/cyan] "
                 f"({self._skill.version})\n"

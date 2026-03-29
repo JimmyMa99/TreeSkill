@@ -1,0 +1,80 @@
+[
+  {
+    "id": "grammys_album_year",
+    "topic": "Entertainment",
+    "question": "Who holds the all-time record at the Grammys for the most wins in the album of the year category?",
+    "answer": "Serban Ghenea",
+    "urls": [
+      "https://en.wikipedia.org/wiki/Grammy_Award_for_Album_of_the_Year"
+    ],
+    "keywords": ["grammys", "album of the year", "most wins", "record"],
+    "evidence": [
+      "The Grammy Award for Album of the Year page notes that Serban Ghenea is the most frequent winner in the category, with five wins as engineer or mixer."
+    ]
+  },
+  {
+    "id": "nba_60_points_since_2023",
+    "topic": "Sports",
+    "question": "How many NBA players have scored 60 or more points in a regular season game since 2023?",
+    "answer": "11 players",
+    "urls": [
+      "https://en.wikipedia.org/wiki/List_of_NBA_single-game_scoring_leaders"
+    ],
+    "keywords": ["nba", "60 points", "since 2023", "regular season", "how many"],
+    "evidence": [
+      "Using the single-game scoring leaders list and filtering regular-season 60-point games from 2023 onward gives 11 different players."
+    ]
+  },
+  {
+    "id": "iata_member_airlines",
+    "topic": "Others",
+    "question": "How many airlines are members of IATA, the organization that supports airline activity and helps formulate industry policy and standards?",
+    "answer": "370",
+    "urls": [
+      "https://www.iata.org/en/about/"
+    ],
+    "keywords": ["IATA", "member airlines", "how many airlines"],
+    "evidence": [
+      "IATA says it represents around 370 airlines worldwide."
+    ]
+  },
+  {
+    "id": "jamie_oliver_books_since_2020",
+    "topic": "Others",
+    "question": "How many books has Jamie Oliver published since 2020?",
+    "answer": "8",
+    "urls": [
+      "https://en.wikipedia.org/wiki/Jamie_Oliver_bibliography"
+    ],
+    "keywords": ["Jamie Oliver", "books since 2020", "how many books"],
+    "evidence": [
+      "Counting Jamie Oliver books from 2020 onward gives eight titles in total."
+    ]
+  },
+  {
+    "id": "emnlp_acceptance_rate",
+    "topic": "Science & Technology",
+    "question": "What was the acceptance rate for the most recent Conference on Empirical Methods in Natural Language Processing (EMNLP), including both the main conference and Findings?",
+    "answer": "39.50%",
+    "urls": [
+      "https://2025.emnlp.org/"
+    ],
+    "keywords": ["EMNLP", "acceptance rate", "Findings", "most recent"],
+    "evidence": [
+      "The most recent EMNLP statistics report an overall acceptance rate of 39.50% when the main conference and Findings are counted together."
+    ]
+  },
+  {
+    "id": "dotnet_long_support_versions",
+    "topic": "Science & Technology",
+    "question": "How many versions of the .NET platform have been released that have a support lifetime of more than 12 months?",
+    "answer": "11",
+    "urls": [
+      "https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core"
+    ],
+    "keywords": [".NET", "support lifetime", "more than 12 months", "how many versions"],
+    "evidence": [
+      "Counting .NET releases with support windows longer than 12 months yields 11 versions."
+    ]
+  }
+]

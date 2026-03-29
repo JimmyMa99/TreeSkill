@@ -330,7 +330,7 @@ Full configuration template: [`demo/example/config.yaml`](./demo/example/config.
 | [Anthropic Adapter](./docs/ANTHROPIC_ADAPTER.md) | Claude 4.5/4.6 series |
 | [Cross-Model Skill Transfer](./docs/design/cross-model-transfer.md) | Dual-model TGD: large model optimizes, small model executes |
 | [Optimizer Deep Dive](./docs/OPTIMIZER_COMPLETE.md) | TrainFreeOptimizer technical documentation |
-| [Tree Optimization Demo](./docs/TREE_OPTIMIZATION_DEMO.md) | 10-minute minimal tree optimization best practice (paper classification) |
+| [Tree Optimization Demo](./../demo/archive/legacy-tree/TREE_OPTIMIZATION_DEMO.md) | Legacy paper-classification demo; retained in archive |
 
 ## Acknowledgments
 
