@@ -6,6 +6,7 @@
 |---|---|---|
 | `demo_sealqa_tree_lifecycle.py` | 完整生命周期：`root -> generate -> evolve -> prune -> merge` | `python -m treeskill` |
 | `demo_sealqa_aso.py` | 更接近真实 frontier/beam 的最小 ASO 实验 | `python -m treeskill sealqa-aso` |
+| `run_sealqa_demo.sh` | 一键复现入口（支持 `--lifecycle` / `--aso` / `--both`） | `./run_sealqa_demo.sh` |
 
 ## 推荐顺序
 
@@ -39,6 +40,15 @@ python -m treeskill sealqa-aso
 
 ```text
 demo/outputs/sealqa-aso-mini/
+```
+
+### 3. 一键复现（推荐）
+
+```bash
+chmod +x demo/run_sealqa_demo.sh
+./demo/run_sealqa_demo.sh            # 只跑生命周期主线
+./demo/run_sealqa_demo.sh --aso      # 只跑 ASO 简化链路
+./demo/run_sealqa_demo.sh --both     # 连续跑两条主线
 ```
 
 ## 归档 Demo
